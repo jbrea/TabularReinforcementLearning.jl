@@ -1,3 +1,4 @@
+abstract type AbstractEpsilonGreedyPolicy end
 @subtypes(AbstractEpsilonGreedyPolicy,
           begin; ϵ::Float64; end,
           OptimisticEpsilonGreedyPolicy,

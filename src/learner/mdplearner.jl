@@ -7,23 +7,17 @@
 
 Used to solve `mdp` with discount factor `γ`.
 """
-struct MDPLearner{Tbuff} <: AbstractReinforcementLearner
-    @common_learner_fields # the buffer is needed to use run! (this is a hack)
-    policy::Array{Int64, 1}
-    values::Array{Float64, 1}
-    mdp::MDP
+@with_kw struct MDPLearner
+    mdp::MDP = MDP()
+    γ::Float64 = .9
+    policy::Array{Int64, 1} = ones(Int64, mdp.ns)
+    values::Array{Float64, 1} = zeros(mdp.ns)
 end
 export MDPLearner
 
 function MDPLearner(mdp, γ::Float64)
-    return MDPLearner(γ, Buffer(), ones(Int64, mdp.ns), zeros(mdp.ns), mdp)
+    return MDPLearner(γ = γ, mdp = mdp)
 end
-
-function MDPLearner(ns::Int64, na::Int64, γ::Float64)
-    return MDPLearner(γ, Buffer(), ones(Int64, ns), zeros(ns), 
-                      MDP(ns, na; init="uniform"))
-end
-
 
 # solve MDP
 

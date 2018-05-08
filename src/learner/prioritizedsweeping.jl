@@ -16,36 +16,23 @@ See [Harm Van Seijen, Rich Sutton ; Proceedings of the 30th International Confer
 `maxcount` defines the maximal number of backups per action, `minpriority` is
 the smallest priority still added to the queue.
 """
-mutable struct SmallBackups{Tbuff} <: AbstractReinforcementLearner
-    @common_learner_fields
-    maxcount::UInt64
-    minpriority::Float64
-    counter::Int64
-    Q::Array{Float64, 2}
-    V::Array{Float64, 1}
-    U::Array{Float64, 1}
-    Nsa::Array{Int64, 2}
-    Ns1a0s0::Array{Dict{Tuple{Int64, Int64}, Int64}, 1}
-    queue::PriorityQueue
-    M::Int64
+@with_kw mutable struct SmallBackups
+    ns::Int64 = 10
+    na::Int64 = 4
+    γ::Float64 = .9
+    initvalue::Float64 = Inf64
+    maxcount::UInt64 = 3
+    minpriority::Float64 = 1e-8
+    M::Int64 = 1
+    counter::Int64 = 0
+    Q::Array{Float64, 2} = zeros(na, ns) .+ initvalue
+    V::Array{Float64, 1} = zeros(ns) .+ (initvalue == Inf64 ? 0. : initvalue)
+    U::Array{Float64, 1} = zeros(ns) .+ (initvalue == Inf64 ? 0. : initvalue)
+    Nsa::Array{Int64, 2} = zeros(Int64, na, ns)
+    Ns1a0s0::Array{Dict{Tuple{Int64, Int64}, Int64}, 1} = [Dict{Tuple{Int64, Int64}, Int64}() for _ in 1:ns]
+    queue::PriorityQueue = PriorityQueue(Base.Order.Reverse, zip(Int64[], Float64[]))
 end
 export SmallBackups
-
-"""
-SmallBackups(; ns = 10, na = 4, γ = .9, initvalue = Inf64, maxcount = 3, 
-                   minpriority = 1e-8)
-"""
-function SmallBackups(; ns = 10, na = 4, γ = .9, initvalue = Inf64,
-                        maxcount = 3, minpriority = 1e-8, M = 1)
-    SmallBackups(γ, Buffer(), UInt64(maxcount), minpriority, 0,
-                 zeros(na, ns) .+ initvalue, 
-                 zeros(ns) .+ (initvalue == Inf64 ? 0. : initvalue),
-                 zeros(ns) .+ (initvalue == Inf64 ? 0. : initvalue),
-                 zeros(Int64, na, ns),
-                 [Dict{Tuple{Int64, Int64}, Int64}() for _ in 1:ns],
-                 PriorityQueue(Base.Order.Reverse, zip(Int64[], Float64[])),
-                 M)
-end
 
 function addtoqueue!(q, s, p)
     if haskey(q, s) 
@@ -76,13 +63,13 @@ function processqueue!(learner)
 end
 
 
-function update!(learner::SmallBackups)
-    a0 = learner.buffer.actions[1]
-    a1 = learner.buffer.actions[2]
-    s0 = learner.buffer.states[1]
-    s1 = learner.buffer.states[2]
-    r = learner.buffer.rewards[1]
-    if learner.buffer.done[1]
+function update!(learner::SmallBackups, buffer)
+    a0 = buffer.actions[1]
+    a1 = buffer.actions[2]
+    s0 = buffer.states[1]
+    s1 = buffer.states[2]
+    r = buffer.rewards[1]
+    if buffer.done[1]
         learner.Nsa[a0, s0] += 1
         if learner.Q[a0, s0] == Inf; learner.Q[a0, s0] = 0; end
         if learner.Nsa[a0, s0] >= learner.M

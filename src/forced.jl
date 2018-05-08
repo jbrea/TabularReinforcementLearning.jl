@@ -1,4 +1,4 @@
-mutable struct ForcedPolicy <: AbstractPolicy
+mutable struct ForcedPolicy 
     t::Int64
     actions::Array{Int64}
 end

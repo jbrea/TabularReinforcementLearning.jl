@@ -21,15 +21,3 @@ macro subtypes(supertype, body, subtypes...)
     end
 end
 
-macro def(name, definition)
-    return quote
-        macro $(esc(name))()
-            esc($(Expr(:quote, definition)))
-        end
-    end
-end
-
-@def common_learner_fields begin
-    γ::Float64
-    buffer::Tbuff
-end

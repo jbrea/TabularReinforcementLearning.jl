@@ -4,12 +4,12 @@
 No eligibility traces, i.e. ``e(a, s) = 1`` for current action ``a`` and state
 ``s`` and zero otherwise.
 """
-struct NoTraces <: AbstractTraces end
+struct NoTraces end
 export NoTraces
 
-# TODO: use sparse matrices for speed.
+# TODO: combine in one struct with additional field replacing::Bool
 for kind in (:ReplacingTraces, :AccumulatingTraces)
-    @eval (struct $kind{Tt} <: AbstractTraces
+    @eval (struct $kind{Tt} 
                 λ::Float64
                 γλ::Float64
                 trace::Tt

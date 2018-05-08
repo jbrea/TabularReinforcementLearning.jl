@@ -118,7 +118,7 @@ function bprosfeatures(ϕ)
             push!(ϕbpros, toindbpros(k1, k2, c1 - c2, r1 - r2))
         end
     end
-    ϕbpros
+    unique(ϕbpros)
 end
 toindbprot(k1, k2, cdiff, rdiff) = cdiff + 16 + 31 * (rdiff + 13) + 
    31 * 27 * (k1 - 1) + 31 * 27 * 128 * (k2 - 1)
@@ -131,7 +131,7 @@ function bprotfeatures(ϕ1, ϕ2)
             push!(ϕbprot, toindbprot(k1, k2, c1 - c2, r1 - r2))
         end
     end
-    ϕbprot
+    unique(ϕbprot)
 end
 
 preprocessstate(p::AtariBPROST, s::Void) = sparsevec([1], [0.], 20652352)

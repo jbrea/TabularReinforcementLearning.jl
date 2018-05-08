@@ -1,32 +1,22 @@
-mutable struct TDLearner{T, Tbuff}
-    @common_learner_fields
-    α::Float64
-    unseenvalue::Float64
-    params::Array{Float64, 2}
-    traces::T
-    initvalue::Float64
-    endvaluepolicy
-end
-
-function TDLearner(; ns = 10, na = 4, α = .1, γ = .9, λ = .8, 
-                     nsteps = 1, 
-                     discretestates = false,
-                     initvalue = discretestates ? Inf64 : 0.,
-                     statetype = discretestates ? Int64 : Array{Float64, 1},
-                     buffer = nsteps == Inf ?
-                        EpisodeBuffer(statetype = statetype) :
-                        Buffer(capacity = nsteps + 1, statetype = statetype),
-                     tracekind = ReplacingTraces, 
-                     unseenvalue = initvalue == Inf64 ? 0. : initvalue, 
-                     endvaluepolicy = :Sarsa)
-    TDLearner(γ, buffer, Float64(α), Float64(unseenvalue), zeros(na, ns) .+ initvalue,
-               λ == 0. || tracekind == NoTraces ? NoTraces() : 
-               tracekind(ns, na, λ, γ), Float64(initvalue), endvaluepolicy)
+@with_kw mutable struct TDLearner{T,Tp}
+    ns::Int64 = 10
+    na::Int64 = 4
+    γ::Float64 = .9
+    λ::Float64 = .8
+    α::Float64 = .1
+    nsteps::Int64 = 1
+    initvalue::Float64 = 0.
+    unseenvalue::Float64 = initvalue == Inf64 ? 0. : initvalue
+    params::Array{Float64, 2} = zeros(na, ns) + initvalue
+    tracekind = DataType = ReplacingTraces
+    traces::T = λ == 0 || tracekind == NoTraces ? NoTraces() : tracekind(ns, na, λ, γ)
+    endvaluepolicy::Tp = :Sarsa
 end
 Sarsa(; kargs...) = TDLearner(; kargs...)
 QLearning(; kargs...) = TDLearner(; endvaluepolicy = :QLearning, kargs...)
 ExpectedSarsa(; kargs...) = TDLearner(; endvaluepolicy = VeryOptimisticEpsilonGreedyPolicy(.1), kargs...)
 export Sarsa, QLearning, ExpectedSarsa
+
 
 # td error
 
@@ -34,9 +24,9 @@ export Sarsa, QLearning, ExpectedSarsa
 @inline getvaluecheckinf(learner, a, s::AbstractArray) = getvalue(learner.params, a, s)
 @inline checkinf(learner, value) = (value == Inf64 ? learner.unseenvalue : value)
 
-@inline function futurevalue(learner)
-    a = learner.buffer.actions[end]
-    s = learner.buffer.states[end]
+@inline function futurevalue(learner, buffer)
+    a = buffer.actions[end]
+    s = buffer.states[end]
     if learner.endvaluepolicy == :QLearning
         checkinf(learner, maximumbelowInf(getvalue(learner.params, s)))
     elseif learner.endvaluepolicy == :Sarsa
@@ -69,10 +59,10 @@ end
     discr + gammaeff * endvalue - startvalue
 end
 
-function tderror(learner)
-    tderror(learner.buffer.rewards, learner.buffer.done, learner.γ,
-            getvaluecheckinf(learner, learner.buffer.actions[1], learner.buffer.states[1]),
-            futurevalue(learner))
+function tderror(learner, buffer)
+    tderror(buffer.rewards, buffer.done, learner.γ,
+            getvaluecheckinf(learner, buffer.actions[1], buffer.states[1]),
+            futurevalue(learner, buffer))
 end
 
 # update params
@@ -94,25 +84,26 @@ end
     end
 end
 
-@inline updatetraceandparams!(learner::TDLearner{NoTraces, <:Any}, s, a, δ) =
+@inline updatetraceandparams!(learner::TDLearner{NoTraces, <:Any}, s, a, δ, done) =
     updateparam!(learner, s, a, δ)
-@inline function updatetraceandparams!(learner, s, a, δ)
+@inline function updatetraceandparams!(learner, s, a, δ, done)
     increasetrace!(learner.traces, s, a)
     updatetraceandparams!(learner.traces, learner.params, learner.α * δ)
     if learner.initvalue == Inf && learner.params[a, s] == Inf
         learner.params[a, s] = learner.unseenvalue + δ
     end
-    if learner.buffer.done[1]; resettraces!(learner.traces); end
+    if done; resettraces!(learner.traces); end
 end
 
 # update
 
-function update!(learner::TDLearner)
-    !isfull(learner.buffer) && return
+function update!(learner::TDLearner, buffer)
+    !isfull(buffer) && return
     updatetraceandparams!(learner, 
-                          learner.buffer.states[1], 
-                          learner.buffer.actions[1],
-                          tderror(learner))
+                          buffer.states[1], 
+                          buffer.actions[1],
+                          tderror(learner, buffer),
+                          buffer.done[1])
 end
  
 function getvalues(learner::TDLearner)

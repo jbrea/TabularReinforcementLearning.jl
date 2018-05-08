@@ -18,7 +18,33 @@ using TabularReinforcementLearning
 #                    ConstantNumberSteps(10^3));
 # julia> @time learn!(x)
 #  12.227629 seconds (13.33 M allocations: 725.842 MiB, 2.28% gc time)
- 
+
+x = RLSetup(ActorCriticPolicyGradient(ns = 4, na = 2, αcritic = 0., nsteps = 25),
+            CartPole(),
+            ConstantNumberSteps(10^5),
+            callbacks = [EvaluationPerEpisode(TotalReward())])
+@time learn!(x)
+pgfplot(Plot(Coordinates(1:length(x.callbacks[1].values), x.callbacks[1].values)), "/tmp/juliaF9BrwQ.pdf")
+
+x = RLSetup(ActorCriticPolicyGradient(ns = 4, na = 2, αcritic = 0., 
+                                      nsteps = 25, α = .1/4),
+            CartPole(),
+            ConstantNumberSteps(10^5),
+            callbacks = [EvaluationPerEpisode(TotalReward())])
+rlsetups = replicate_with_shared_params(x, 4)
+@time learn!(rlsetups)
+lcs = [x.callbacks[1].values for x in rlsetups]
+pgfplot(@pgf(Axis({no_markers}, [PlotInc(Coordinates(1:length(lc), lc)) 
+                                 for lc in lcs]...)), "/tmp/asdasd.pdf")
+
+import TabularReinforcementLearning:Id
+x = RLSetup(DeepActorCritic(model = Id(), nh = 4, na = 2, αcritic = 0., nsteps = 25),
+            CartPole(),
+            ConstantNumberSteps(10^5),
+            callbacks = [EvaluationPerEpisode(TotalReward())])
+@time learn!(x)
+pgfplot(Plot(Coordinates(1:length(x.callbacks[1].values), x.callbacks[1].values)), "/tmp/juliaF9BrwQ.pdf")
+
 envs = [CartPole() for _ in 1:4];
 agents = ParallelAgents(A2C(TabularReinforcementLearning.Chain(Id()), 
                nsteps = 25, γ = .9,
@@ -61,13 +87,15 @@ learner2.params
 
 env = MountainCar(maxsteps = 10^4)
 # using Flux
-envs = [CartPole() for _ in 1:4];
-learner = DeepActorCritic(Flux.Chain(Id()), nh = 4, na = 3, nsteps = 25,
-                          αcritic = 0., opt = p -> Flux.SGD(p, .1));
-# x = RLSetup(ParallelAgents(learner, 4), envs, EvaluationPerEpisode(TotalReward()), 
+nenv = 8
+envs = [CartPole() for _ in 1:nenv];
+# learner = DeepActorCritic(Flux.Chain(Id()), nh = 4, na = 3, nsteps = 25,
+#                           αcritic = 0., opt = p -> Flux.SGD(p, .1));
+learner = ActorCriticPolicyGradient(na = 3, ns = 4, α = .03/nenv, αcritic = 0., nsteps = 25)
+x = RLSetup(AsyncParallelAgents(learner, nenv), envs, EvaluationPerEpisode(TotalReward()), 
+            ConstantNumberSteps(10^6));
+# x = RLSetup(Agent(learner), envs[1], EvaluationPerEpisode(TotalReward()), 
 #             ConstantNumberSteps(10^5));
-x = RLSetup(Agent(learner), envs[1], EvaluationPerEpisode(TotalReward()), 
-            ConstantNumberSteps(10^5));
 @time learn!(x)
 pgfplot(Plot(Coordinates(1:length(x.metric.values), x.metric.values)), "/tmp/julia0F9BrwQ.pdf")
 
@@ -80,25 +108,26 @@ pgfplot(Plot(Coordinates(1:length(xeval.metric.values), xeval.metric.values)), "
 
 env = CartPole();
 using Flux
-learner = DQN(Chain(Dense(4, 20, relu), #Dense(128, 128, relu),
-                    Dense(20, 2)),
-              minibatchsize = 32, doubledqn = false, γ = .9, 
-              opt = x -> ADAM(x, .0001), updateevery = 1,
-             replaysize = 10000, updatetargetevery = 100, startlearningat = 100);
+learner = DQN(Chain(Dense(4, 16, relu), Dense(16, 16, relu),
+                    Dense(16, 2)),
+              minibatchsize = 32, doubledqn = true, γ = .99, 
+              opttype = x -> ADAM(x, .001), updateevery = 1,
+              replaysize = 1000, updatetargetevery = 100, startlearningat = 100);
 # learner = DeepActorCritic(Chain(Dense(4, 20, relu)), nenvs = 10,
 #                           statetype = Int64,
 #                            nh = 20, na = 2, nsteps = 25, αcritic = 0.);
 # # # learner = ActorCriticPolicyGradient(ns = 4, na = 2, nsteps = 25, αcritic = 0.);
-x = RLSetup(Agent(learner
+x = RLSetup(learner
 #                    , callback = LinearDecreaseEpsilon(1, 4*10^4, .5, .01)
-                 ), 
+                 , 
 #               [CartPole() for _ in 1:10], 
                env,
-            EvaluationPerEpisode(TotalReward()),
+               ConstantNumberSteps(10^5),
+               callbacks = [EvaluationPerEpisode(TotalReward())],
 #             RecordAll(),
-                  ConstantNumberSteps(10^5));
+                  );
 @time learn!(x)
-pgfplot(Plot(Coordinates(1:length(x.metric.values), x.metric.values)), "/tmp/juliaF9BrwQ.pdf")
+pgfplot(Plot(Coordinates(1:length(x.callbacks[1].values), x.callbacks[1].values)), "/tmp/juliaF9BrwQ.pdf")
 
 w = SharedArray(zeros(2, 4))
 ls = [DeepActorCritic(Id(), policylayer = Linear(w)) for _ in 1:2];

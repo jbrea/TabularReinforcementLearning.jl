@@ -1,11 +1,11 @@
 """
-    mutable struct ConstantNumberSteps <: StoppingCriterion
+    mutable struct ConstantNumberSteps
         T::Int64
         counter::Int64
 
 Stops learning when the agent has taken 'T' actions.
 """
-mutable struct ConstantNumberSteps <: StoppingCriterion
+mutable struct ConstantNumberSteps
     T::Int64
     counter::Int64
 end
@@ -13,7 +13,7 @@ end
     ConstantNumberSteps(T) = ConstantNumberSteps(T, 0)
 """
 ConstantNumberSteps(T) = ConstantNumberSteps(T, 0)
-function isbreak!(criterion::ConstantNumberSteps, done, buffer)
+function isbreak!(criterion::ConstantNumberSteps, sraw, a, r, done)
     criterion.counter += 1
     if criterion.counter == criterion.T
         criterion.counter = 0
@@ -24,14 +24,14 @@ end
 export ConstantNumberSteps
 
 """
-    mutable struct ConstantNumberEpisodes <: StoppingCriterion
+    mutable struct ConstantNumberEpisodes
         N::Int64
         counter::Int64
 
 Stops learning when the agent has finished 'N' episodes.
 """
 
-mutable struct ConstantNumberEpisodes <: StoppingCriterion
+mutable struct ConstantNumberEpisodes
     N::Int64
     counter::Int64
 end
@@ -39,7 +39,7 @@ end
         ConstantNumbeEpisodes(N) = ConstantNumberEpisodes(N, 0)
 """
 ConstantNumberEpisodes(N) = ConstantNumberEpisodes(N, 0)
-function isbreak!(criterion::ConstantNumberEpisodes, done, buffer)
+function isbreak!(criterion::ConstantNumberEpisodes, sraw, a, r, done)
     if done
         criterion.counter += 1
         if criterion.counter == criterion.N

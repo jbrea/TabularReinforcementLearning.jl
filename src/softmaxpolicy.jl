@@ -15,11 +15,11 @@ were never chosen before, a uniform random novel action is returned.
 
 Returns a SoftmaxPolicy with default β = 1.
 """
+abstract type AbstractSoftmaxPolicy end
 mutable struct SoftmaxPolicy <: AbstractSoftmaxPolicy
     β::Float64
 end
-struct SoftmaxPolicy1 <: AbstractSoftmaxPolicy
-end
+struct SoftmaxPolicy1 <: AbstractSoftmaxPolicy end
 SoftmaxPolicy(; β = 1.) = β == 1 ? SoftmaxPolicy1() : SoftmaxPolicy(β)
 export SoftmaxPolicy, SoftmaxPolicy1
 

@@ -4,11 +4,12 @@ episode = [(0., false, 1, 1), (0., false, 2, 1), (0., false, 3, 1), # r, done, n
            (0., false, 2, 2), (0., false, 6, 1), (2., true, 1, 1), (0., false, 2, 2)]
 na = 2; ns = 6; γ = .9
 learner = SmallBackups(na = na, ns = ns, γ = γ, maxcount = 10)
-T.pushstateaction!(learner.buffer, episode[1][3:4]...)
+buffer = Buffer()
+T.pushstateaction!(buffer, episode[1][3:4]...)
 for (r, done, s, a) in episode[2:end]
-    T.pushreturn!(learner.buffer, r, done)
-    T.pushstateaction!(learner.buffer, s, a)
-    update!(learner)
+    T.pushreturn!(buffer, r, done)
+    T.pushstateaction!(buffer, s, a)
+    update!(learner, buffer)
 end
 Nsa = zeros(Int64, na, ns)
 for (r, done, s, a) in episode[1:end-1]; Nsa[a, s] += 1; end
@@ -21,16 +22,13 @@ include(joinpath(Pkg.dir("TabularReinforcementLearning"),
                  "environments", "discretestates", "randommdp.jl"))
 mdp = DetTreeMDP(na = 2, depth = 2)
 srand(123)
-x = RLSetup(Agent(SmallBackups(ns = mdp.ns, na = mdp.na, γ = .99, 
-                               initvalue = 0)),
-            mdp, EvaluationPerT(10^2), ConstantNumberSteps(10^4));
+x = RLSetup(SmallBackups(ns = mdp.ns, na = mdp.na, γ = .99, initvalue = 0),
+            mdp, ConstantNumberSteps(10^4));
 learn!(x)
-x.agent.learner.Q
 reset!(mdp)
 srand(123)
-y = RLSetup(Agent(SmallBackups(ns = mdp.ns, na = mdp.na, γ = .99, 
-                               initvalue = Inf64)),
-            mdp, EvaluationPerT(10^2), ConstantNumberSteps(10^4));
+y = RLSetup(SmallBackups(ns = mdp.ns, na = mdp.na, γ = .99, initvalue = Inf64),
+            mdp, ConstantNumberSteps(10^4));
 learn!(y)
-@test y.agent.learner.Q[:, 1:end-1] ≈ x.agent.learner.Q[:, 1:end-1]
+@test y.learner.Q[:, 1:end-1] ≈ x.learner.Q[:, 1:end-1]
 

@@ -42,6 +42,7 @@ function pushreturn!(b::EpisodeBuffer, r, done)
     push!(b.rewards, r)
     push!(b.done, done)
 end
+export EpisodeBuffer
 
 struct AdvantageBuffer{Tg, Ta}
     pg::CircularBuffer{Tg}
@@ -63,29 +64,29 @@ pushstateaction!(b::AdvantageBuffer, s, a) = push!(b.actions, a)
 
 
 
-struct ArrayCircularBuffer{T}
+mutable struct ArrayCircularBuffer{T}
     data::T
     capacity::Int64
-    counter::Array{Int64}
+    counter::Int64
 end
 function ArrayCircularBuffer(arraytype, datatype, elemshape, capacity)
     ArrayCircularBuffer(arraytype(zeros(datatype, elemshape..., capacity)),
-                        capacity, [0])
+                        capacity, 0)
 end
 import Base.push!, Base.view, Base.endof, Base.getindex
 for N in 2:5
     @eval current_module() begin
         function push!(a::ArrayCircularBuffer{<:AbstractArray{T, $N}}, x) where T
-            setindex!(a.data, x, $(fill(Colon(), N-1)...), a.counter[1] + 1)
-            a.counter[1] += 1
-            a.counter[1] = a.counter[1] % a.capacity
+            setindex!(a.data, x, $(fill(Colon(), N-1)...), a.counter + 1)
+            a.counter += 1
+            a.counter = a.counter % a.capacity
             a.data
         end
     end
     for func in [:view, :getindex]
         @eval current_module() begin
             @inline function $func(a::ArrayCircularBuffer{<:AbstractArray{T, $N}}, i) where T
-                idx = (a.counter[1] + i - 1) .% a.capacity + 1
+                idx = (a.counter + i - 1) .% a.capacity + 1
                 $func(a.data, $(fill(Colon(), N-1)...), idx)
             end
             @inline function $func(a::ArrayCircularBuffer{<:AbstractArray{T, $N}}, i, nmarkov) where T
@@ -95,7 +96,7 @@ for N in 2:5
                 c = 1
                 for j in i
                     for k in j - nmarkov + 1:j
-                        idx[c] = (a.counter[1] + k - 1) % a.capacity + 1
+                        idx[c] = (a.counter + k - 1) % a.capacity + 1
                         c += 1
                     end
                 end
