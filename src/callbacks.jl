@@ -77,7 +77,7 @@ function LinearDecreaseEpsilon(start, stop, initval, finalval)
     step = (finalval - initval)/(stop - start)
     LinearDecreaseEpsilon(start, stop, initval, finalval, 0, step)
 end
-@inlinesetepsilon(policy, val) = policy.ϵ = val
+@inline setepsilon(policy, val) = policy.ϵ = val
 @inline incrementepsilon(policy, val) = policy.ϵ += val
 function callback!(c::LinearDecreaseEpsilon, rlsetup, sraw, a, r, done)
     c.t += 1
