@@ -58,10 +58,10 @@ reset!(env::AtariEnv) = reset_game(env.ale)
 
 struct AtariPreprocessor end
 function preprocessstate(::AtariPreprocessor, s)
-    Flux.gpu(reshape(Float64.(imresize(reshape(s, 160, 210), 84, 84)), 84, 84, 1))
+    Flux.gpu(reshape(Float16.(imresize(reshape(s, 160, 210), 84, 84)/256), 84, 84, 1))
 end
 function preprocessstate(p::AtariPreprocessor, ::Void)
-    Flux.gpu(zeros(Float64, 84, 84, 1))
+    Flux.gpu(zeros(Float16, 84, 84, 1))
 end
 
 mutable struct AtariBPROST
