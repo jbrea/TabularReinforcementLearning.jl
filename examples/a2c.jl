@@ -19,15 +19,37 @@ using TabularReinforcementLearning
 # julia> @time learn!(x)
 #  12.227629 seconds (13.33 M allocations: 725.842 MiB, 2.28% gc time)
 
-x = RLSetup(ActorCriticPolicyGradient(ns = 4, na = 2, αcritic = 0., nsteps = 25),
+x = RLSetup(ActorCriticPolicyGradient(ns = 4, na = 2, αcritic = 0., 
+                                      nsteps = 25, α = .001),
+            CartPole(),
+            ConstantNumberSteps(10^6),
+            callbacks = [EvaluationPerEpisode(TotalReward())])
+@time learn!(x)
+pgfplot(Plot(Coordinates(1:length(x.callbacks[1].values), x.callbacks[1].values)), "/tmp/juliaF9BrwQ.pdf")
+
+x = RLSetup(ActorCriticPolicyGradient(ns = 4, na = 2, αcritic = 0., 
+                                      nsteps = 25, α = .001/4),
+            CartPole(),
+            ConstantNumberSteps(10^6),
+            callbacks = [EvaluationPerEpisode(TotalReward())])
+rlsetups = replicate_with_shared_params(x, 8)
+@time learn!(rlsetups)
+lcs = [x.callbacks[1].values for x in rlsetups]
+pgfplot(@pgf(Axis({no_markers}, [PlotInc(Coordinates(1:length(lc), lc)) 
+                                 for lc in lcs]...)), "/tmp/asdasd.pdf")
+
+import TabularReinforcementLearning:Id
+using Flux
+x = RLSetup(DeepActorCritic(net = Id(), nh = 4, na = 2, αcritic = 0., 
+                            nsteps = 25, opttype = x -> SGD(x, .1)),
             CartPole(),
             ConstantNumberSteps(10^5),
             callbacks = [EvaluationPerEpisode(TotalReward())])
 @time learn!(x)
 pgfplot(Plot(Coordinates(1:length(x.callbacks[1].values), x.callbacks[1].values)), "/tmp/juliaF9BrwQ.pdf")
 
-x = RLSetup(ActorCriticPolicyGradient(ns = 4, na = 2, αcritic = 0., 
-                                      nsteps = 25, α = .1/4),
+x = RLSetup(DeepActorCritic(net = Id(), nh = 4, na = 2, αcritic = 0., 
+                            nsteps = 25, opttype = x -> SGD(x, .1)),
             CartPole(),
             ConstantNumberSteps(10^5),
             callbacks = [EvaluationPerEpisode(TotalReward())])
@@ -37,13 +59,6 @@ lcs = [x.callbacks[1].values for x in rlsetups]
 pgfplot(@pgf(Axis({no_markers}, [PlotInc(Coordinates(1:length(lc), lc)) 
                                  for lc in lcs]...)), "/tmp/asdasd.pdf")
 
-import TabularReinforcementLearning:Id
-x = RLSetup(DeepActorCritic(model = Id(), nh = 4, na = 2, αcritic = 0., nsteps = 25),
-            CartPole(),
-            ConstantNumberSteps(10^5),
-            callbacks = [EvaluationPerEpisode(TotalReward())])
-@time learn!(x)
-pgfplot(Plot(Coordinates(1:length(x.callbacks[1].values), x.callbacks[1].values)), "/tmp/juliaF9BrwQ.pdf")
 
 envs = [CartPole() for _ in 1:4];
 agents = ParallelAgents(A2C(TabularReinforcementLearning.Chain(Id()), 

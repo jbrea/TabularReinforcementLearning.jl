@@ -14,6 +14,7 @@
     αcritic::Float64 = .1
 end
 export DeepActorCritic
+DeepActorCritic(net; kargs...) = DeepActorCritic(; net = net, kargs...)
 defaultpolicy(::DeepActorCritic, b) = SoftmaxPolicy1()
 
 @inline function selectaction(learner::DeepActorCritic, policy, state)

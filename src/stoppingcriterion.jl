@@ -6,16 +6,16 @@
 Stops learning when the agent has taken 'T' actions.
 """
 mutable struct ConstantNumberSteps
-    T::Int64
+    N::Int64
     counter::Int64
 end
 """
-    ConstantNumberSteps(T) = ConstantNumberSteps(T, 0)
+    ConstantNumberSteps(N) = ConstantNumberSteps(N, 0)
 """
-ConstantNumberSteps(T) = ConstantNumberSteps(T, 0)
+ConstantNumberSteps(N) = ConstantNumberSteps(N, 0)
 function isbreak!(criterion::ConstantNumberSteps, sraw, a, r, done)
     criterion.counter += 1
-    if criterion.counter == criterion.T
+    if criterion.counter == criterion.N
         criterion.counter = 0
         return true
     end

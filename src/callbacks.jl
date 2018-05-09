@@ -87,17 +87,23 @@ function callback!(c::LinearDecreaseEpsilon, rlsetup, sraw, a, r, done)
     end
 end
 
-struct Progress 
-    steps::Int64
+@with_kw mutable struct Progress 
+    steps::Int64 = 10
+    laststopcountervalue::Int64 = 0
 end
+Progress(steps) = Progress(steps = steps)
 export Progress
-showprogress(c, stop::ConstantNumberSteps) = stop.counter % div(stop.T, c.steps) == 0
-showprogress(c, stop::ConstantNumberEpisodes) = stop.counter % div(stop.N, c.steps) == 0
+progressunit(stop::ConstantNumberSteps) = "steps"
+progressunit(stop::ConstantNumberEpisodes) = "episodes"
 function callback!(c::Progress, rlsetup, sraw, a, r, done)
     stop = rlsetup.stoppingcriterion
-    if showprogress(c, stop)
+    if stop.counter != c.laststopcountervalue && stop.counter % div(stop.N, c.steps) == 0
+        c.laststopcountervalue = stop.counter
         lastvaluestring = join([getlastvaluestring(c) for c in rlsetup.callbacks])
-        info("$(now())\t $(stop.counter)/$(stop.T)\t $lastvaluestring.")
+        if lastvaluestring != ""
+            lastvaluestring = "latest " * lastvaluestring
+        end
+        info("$(now())\t $(lpad(stop.counter, 9))/$(stop.N) $(progressunit(stop))\t $lastvaluestring.")
     end
 end
 

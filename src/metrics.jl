@@ -149,8 +149,8 @@ end
 getvalue(p::EvaluationPerT) = p.values
 export EvaluationPerT
 function getlastvaluestring(p::Union{EvaluationPerT, EvaluationPerEpisode})
-    if length(values) > 0
-        "$(typeof(p.metric).name.name): $(p.values)"
+    if length(p.values) > 0
+        "$(typeof(p.metric).name.name): $(p.values[end])"
     else
         ""
     end
