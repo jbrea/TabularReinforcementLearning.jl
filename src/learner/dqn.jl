@@ -15,7 +15,7 @@
     replaysize::Int64 = 10^4
 end
 export DQN
-DQN(net; kargs...) = DQN(; net = net, kargs...)
+DQN(net; kargs...) = DQN(; net = Flux.gpu(net), kargs...)
 function defaultbuffer(learner::DQN, env, preprocessor)
     state = preprocessstate(preprocessor, getstate(env)[1])
     ArrayStateBuffer(capacity = learner.replaysize, 
