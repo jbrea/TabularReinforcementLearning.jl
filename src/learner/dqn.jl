@@ -38,6 +38,8 @@ end
     policy::Tpol = EpsilonGreedyPolicy(.1)
     buffer::Tbuf
 end
+@inline setepsilon(policy::NMarkovPolicy, val) = policy.policy.ϵ = val
+@inline incrementepsilon(policy::NMarkovPolicy, val) = policy.policy.ϵ += val
 
 @inline function selectaction(learner::DQN, policy, state)
     if learner.nmarkov == 1
@@ -45,9 +47,9 @@ end
     else
         push!(policy.buffer, state)
         selectaction(policy.policy, 
-                     learner.policynet(getindex(policy.buffer, 
+                     learner.policynet(Flux.gpu(getindex(policy.buffer, 
                                                 endof(policy.buffer),
-                                                learner.nmarkov)))
+                                                learner.nmarkov))))
     end
 end
 function selecta(q, a)
@@ -64,8 +66,9 @@ function update!(learner::DQN, b)
     end
     indices = StatsBase.sample(learner.nmarkov:length(b.rewards), 
                                learner.minibatchsize, replace = false)
-    qa = learner.net(getindex(b.states, indices, learner.nmarkov))
-    qat = learner.targetnet(getindex(b.states, indices + 1, learner.nmarkov))
+    data = Flux.gpu(getindex(b.states, indices + 1, learner.nmarkov + 1))
+    qa = learner.net(data[1:end-1])
+    qat = learner.targetnet(data[2:end])
     q = selecta(qa, b.actions[indices])
     rs = Float64[]
     for (k, i) in enumerate(indices)
