@@ -59,21 +59,21 @@ reset!(env::AtariEnv) = reset_game(env.ale)
 @with_kw struct AtariPreprocessor
     gpu::Bool = false
 end
-togpu(x) = CuArrays.adapt(CuArray{Float16}, x)
+togpu(x) = CuArrays.adapt(CuArray{UInt8}, x)
 function preprocessstate(p::AtariPreprocessor, s)
-    s = reshape(imresize(reshape(s, 160, 210), 84, 84)/256, 84, 84, 1)
+    s = floor.(UInt8, reshape(imresize(reshape(s, 160, 210), 80, 105), 80, 105, 1))
     if p.gpu
         togpu(s)
     else
-        Float16.(s)
+        s
     end
 end
 function preprocessstate(p::AtariPreprocessor, ::Void)
-    s = zeros(84, 84, 1)
+    s = zeros(UInt8, 80, 105, 1)
     if p.gpu
         togpu(s)
     else
-        Float16.(s)
+        s
     end
 end
 
