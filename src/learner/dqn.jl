@@ -66,9 +66,9 @@ function update!(learner::DQN, b)
     end
     indices = StatsBase.sample(learner.nmarkov:length(b.rewards), 
                                learner.minibatchsize, replace = false)
-    data = Flux.gpu(getindex(b.states, indices + 1, learner.nmarkov + 1))
-    qa = learner.net(data[1:end-1])
-    qat = learner.targetnet(data[2:end])
+    qa = learner.net(Flux.gpu(getindex(b.states, indices, learner.nmarkov)))
+    qat = learner.targetnet(Flux.gpu(getindex(b.states, indices + 1,
+                                              learner.nmarkov)))
     q = selecta(qa, b.actions[indices])
     rs = Float64[]
     for (k, i) in enumerate(indices)

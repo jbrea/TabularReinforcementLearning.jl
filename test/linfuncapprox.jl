@@ -71,6 +71,8 @@ x2.policy.t = 1
 learn!(x2)
 @test x.learner.policynet.W ≈ x2.learner.params
 
+struct Id end 
+(l::Id)(x) = x
 ns = 10; na = 4;
 env = MDP(ns = ns, na = na, init = "deterministic")
 policy = ForcedPolicy(rand(1:na, 200))

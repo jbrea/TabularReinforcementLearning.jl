@@ -11,9 +11,6 @@ end
 (a::Linear)(x) = a.W * x
 Flux.treelike(Linear)
 
-struct Id end # used for testing
-(l::Id)(x) = x
-
 Base.show(io::IO, l::Linear) = print(io, "Linear( $(size(l.W, 2)), $(size(l.W, 1)))")
 
 function fluxreconstruct(elem, w, i)
