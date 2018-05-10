@@ -10,12 +10,16 @@ ns = 2; na = 3;
 learner = DQN(net = Chain(Dense(ns, 20, relu), Dense(20, na)),
               updateevery = 1, updatetargetevery = 100,
               doubledqn = true, replaysize = 10^3) 
-learner = DeepActorCritic(net = Chain(Dense(ns, 20, relu)),
-                          na = na, nh = 20, αcritic = 0.,
-                          nsteps = 25)
+# learner = DeepActorCritic(net = Chain(Dense(ns, 20, relu)),
+#                           na = na, nh = 20, αcritic = 0.,
+#                           nsteps = 25)
 # learner = ActorCriticPolicyGradient(na = na, ns = ns, αcritic = 0., nsteps = 25)
+struct FP end
+import TabularReinforcementLearning:preprocessstate
+preprocessstate(::FP, s) = Float32.(s)
 x = RLSetup(learner,
             env,
-            ConstantNumberSteps(10^6),
-            callbacks = [EvaluationPerEpisode(TotalReward()), Progress(10)])
+            ConstantNumberSteps(10^5),
+            preprocessor = FP(),
+            callbacks = [EvaluationPerEpisode(TotalReward()), Progress()])
 @time learn!(x)

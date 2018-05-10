@@ -1,4 +1,4 @@
-using ArcadeLearningEnvironment, Images
+using ArcadeLearningEnvironment, Images, Parameters
 import DataStructures: CircularBuffer
 import TabularReinforcementLearning
 import Flux
@@ -56,25 +56,24 @@ function getstate(env::AtariEnv)
 end
 reset!(env::AtariEnv) = reset_game(env.ale)
 
-struct AtariPreprocessor
-    gpu::Bool
+@with_kw struct AtariPreprocessor
+    gpu::Bool = false
 end
-AtariPreprocessor() = AtariPreprocessor(false)
 togpu(x) = CuArrays.adapt(CuArray{Float16}, x)
 function preprocessstate(p::AtariPreprocessor, s)
-    s = reshape(Float16.(imresize(reshape(s, 160, 210), 84, 84)/256), 84, 84, 1)
+    s = reshape(imresize(reshape(s, 160, 210), 84, 84)/256, 84, 84, 1)
     if p.gpu
         togpu(s)
     else
-        s
+        Float16.(s)
     end
 end
 function preprocessstate(p::AtariPreprocessor, ::Void)
-    s = zeros(Float16, 84, 84, 1)
+    s = zeros(84, 84, 1)
     if p.gpu
         togpu(s)
     else
-        s
+        Float16.(s)
     end
 end
 
