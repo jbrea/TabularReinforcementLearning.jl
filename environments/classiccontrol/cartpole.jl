@@ -51,7 +51,7 @@ end
 function interact!(a, env::CartPole{T}) where T <: Number
     if env.done
         reset!(env)
-        return env.state, 0., env.done
+        return env.state, 1., env.done
     end
     env.t += 1
     force = a == 2 ? env.params.forcemag : -env.params.forcemag
@@ -72,5 +72,5 @@ function interact!(a, env::CartPole{T}) where T <: Number
     env.done = abs(env.state[1]) > env.params.xthreshold ||
                abs(env.state[3]) > env.params.thetathreshold ||
                env.t >= env.params.maxsteps
-    env.state, 1. - env.done, env.done
+    env.state, 1., env.done
 end

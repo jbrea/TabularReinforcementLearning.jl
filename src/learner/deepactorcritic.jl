@@ -11,15 +11,13 @@
     params::Array{Any, 1} = vcat(map(Flux.params, [net, policylayer, valuelayer])...)
     opttype::ToptT = Flux.ADAM
     opt::Topt = opttype(params)
+    inputtype::UnionAll = typeof(Flux.params(net)[1].data).name.wrapper{typeof(Flux.params(net)[1].data).parameters[1]}
     αcritic::Float64 = .1
+    nmarkov::Int64 = 1
 end
 export DeepActorCritic
 DeepActorCritic(net; kargs...) = DeepActorCritic(; net = net, kargs...)
-defaultpolicy(::DeepActorCritic, b) = SoftmaxPolicy1()
 
-@inline function selectaction(learner::DeepActorCritic, policy, state)
-    selectaction(policy, learner.policynet(state))
-end
 function update!(learner::DeepActorCritic, b)
     !isfull(b) && return
     h1 = learner.net(b.states[1])

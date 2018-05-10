@@ -17,20 +17,22 @@
 end
 export DQN
 DQN(net; kargs...) = DQN(; net = Flux.gpu(net), kargs...)
-function defaultbuffer(learner::DQN, env, preprocessor)
+function defaultbuffer(learner::Union{DQN, DeepActorCritic}, env, preprocessor)
     state = preprocessstate(preprocessor, getstate(env)[1])
-    ArrayStateBuffer(capacity = learner.replaysize, 
+    ArrayStateBuffer(capacity = typeof(learner) == DQN ? learner.replaysize :
+                                                         learner.nsteps + 1, 
                      arraytype = typeof(state).name.wrapper,
                      datatype = typeof(state[1]),
                      elemshape = size(state))
 end
-function defaultpolicy(learner::DQN, buffer)
+function defaultpolicy(learner::Union{DQN, DeepActorCritic}, buffer)
     if learner.nmarkov == 1
-        EpsilonGreedyPolicy(.1)
+        typeof(learner) == DQN ? EpsilonGreedyPolicy(.1) : SoftmaxPolicy1()
     else
         a = buffer.states.data
         data = getindex(a, map(x -> 1:x, size(a)[1:end-1])..., 1:learner.nmarkov)
-        NMarkovPolicy(EpsilonGreedyPolicy(.1),
+        NMarkovPolicy(typeof(learner) == DQN ? EpsilonGreedyPolicy(.1) : 
+                                               SoftmaxPolicy1(),
                       ArrayCircularBuffer(data, learner.nmarkov, 0))
     end
 end
@@ -43,7 +45,7 @@ end
 @inline incrementepsilon(policy::NMarkovPolicy, val) = policy.policy.ϵ += val
 @inline convertinput(learner, input) = convert(learner.inputtype, input)
 
-@inline function selectaction(learner::DQN, policy, state)
+@inline function selectaction(learner::Union{DQN, DeepActorCritic}, policy, state)
     if learner.nmarkov == 1
         selectaction(policy, learner.policynet(convertinput(learner, state)))
     else
