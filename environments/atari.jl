@@ -56,12 +56,26 @@ function getstate(env::AtariEnv)
 end
 reset!(env::AtariEnv) = reset_game(env.ale)
 
-struct AtariPreprocessor end
-function preprocessstate(::AtariPreprocessor, s)
-    Flux.gpu(reshape(Float16.(imresize(reshape(s, 160, 210), 84, 84)/256), 84, 84, 1))
+struct AtariPreprocessor
+    gpu::Bool
+end
+AtariPreprocessor() = AtariPreprocessor(false)
+togpu(x) = CuArrays.adapt(CuArray{Float16}, x)
+function preprocessstate(p::AtariPreprocessor, s)
+    s = reshape(Float16.(imresize(reshape(s, 160, 210), 84, 84)/256), 84, 84, 1)
+    if p.gpu
+        togpu(s)
+    else
+        s
+    end
 end
 function preprocessstate(p::AtariPreprocessor, ::Void)
-    Flux.gpu(zeros(Float16, 84, 84, 1))
+    s = zeros(Float16, 84, 84, 1)
+    if p.gpu
+        togpu(s)
+    else
+        s
+    end
 end
 
 mutable struct AtariBPROST
