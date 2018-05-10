@@ -8,7 +8,6 @@
     updateevery::Int64 = 1
     opttype::ToptT = Flux.ADAM
     opt::Topt = opttype(Flux.params(net))
-    inputtype::UnionAll = typeof(Flux.params(net)[1].data).name.wrapper{typeof(Flux.params(net)[1].data).parameters[1]}
     startlearningat::Int64 = 10^3
     minibatchsize::Int64 = 32
     doubledqn::Bool = true
@@ -43,18 +42,16 @@ end
 end
 @inline setepsilon(policy::NMarkovPolicy, val) = policy.policy.ϵ = val
 @inline incrementepsilon(policy::NMarkovPolicy, val) = policy.policy.ϵ += val
-@inline convertinput(learner, input) = convert(learner.inputtype, input)
 
 @inline function selectaction(learner::Union{DQN, DeepActorCritic}, policy, state)
     if learner.nmarkov == 1
-        selectaction(policy, learner.policynet(convertinput(learner, state)))
+        selectaction(policy, learner.policynet(state))
     else
         push!(policy.buffer, state)
         selectaction(policy.policy, 
-                     learner.policynet(convertinput(learner, 
-                                                    getindex(policy.buffer, 
-                                                        endof(policy.buffer),
-                                                        learner.nmarkov))))
+                     learner.policynet(getindex(policy.buffer, 
+                                                endof(policy.buffer),
+                                                learner.nmarkov)))
     end
 end
 function selecta(q, a)
@@ -71,9 +68,8 @@ function update!(learner::DQN, b)
     end
     indices = StatsBase.sample(learner.nmarkov:length(b.rewards), 
                                learner.minibatchsize, replace = false)
-    qa = learner.net(convertinput(learner, getindex(b.states, indices, learner.nmarkov)))
-    qat = learner.targetnet(convertinput(learner, getindex(b.states, indices + 1,
-                                                           learner.nmarkov)))
+    qa = learner.net(getindex(b.states, indices, learner.nmarkov))
+    qat = learner.targetnet(getindex(b.states, indices + 1, learner.nmarkov))
     q = selecta(qa, b.actions[indices])
     rs = Float64[]
     for (k, i) in enumerate(indices)
