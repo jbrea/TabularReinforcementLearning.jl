@@ -25,8 +25,9 @@ function defaultbuffer(learner, env, preprocessor)
     end
 end
 
-function toasync(rlsetup, n)
-    learner = deepcopy(rlsetup.learner)
-    [reconstruct(deepcopy(rlsetup), learner = learner) for i in 1:n]
+function toasync(rlsetup, createenv, n)
+    [reconstruct(deepcopy(rlsetup), learner = rlsetup.learner, 
+                                    environment = createenv()) for i in 1:n]
+
 end
 export toasync

@@ -19,19 +19,19 @@ export DQN
 DQN(net; kargs...) = DQN(; net = Flux.gpu(net), kargs...)
 function defaultbuffer(learner::Union{DQN, DeepActorCritic}, env, preprocessor)
     state = preprocessstate(preprocessor, getstate(env)[1])
-    ArrayStateBuffer(capacity = typeof(learner) == DQN ? learner.replaysize :
-                                                         learner.nsteps + 1, 
+    ArrayStateBuffer(capacity = typeof(learner) <: DQN ? learner.replaysize :
+                                                         learner.nsteps + learner.nmarkov, 
                      arraytype = typeof(state).name.wrapper,
                      datatype = typeof(state[1]),
                      elemshape = size(state))
 end
 function defaultpolicy(learner::Union{DQN, DeepActorCritic}, buffer)
     if learner.nmarkov == 1
-        typeof(learner) == DQN ? EpsilonGreedyPolicy(.1) : SoftmaxPolicy1()
+        typeof(learner) <: DQN ? EpsilonGreedyPolicy(.1) : SoftmaxPolicy1()
     else
         a = buffer.states.data
         data = getindex(a, map(x -> 1:x, size(a)[1:end-1])..., 1:learner.nmarkov)
-        NMarkovPolicy(typeof(learner) == DQN ? EpsilonGreedyPolicy(.1) : 
+        NMarkovPolicy(typeof(learner) <: DQN ? EpsilonGreedyPolicy(.1) : 
                                                SoftmaxPolicy1(),
                       ArrayCircularBuffer(data, learner.nmarkov, 0))
     end
