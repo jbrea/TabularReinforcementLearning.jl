@@ -76,7 +76,7 @@ reset!(env::AtariEnv) = reset_game(env.ale)
     scale::Bool = false
     inputtype::DataType = scale ? Float32 : UInt8
 end
-togpu(x, inputtype) = CuArrays.adapt(CuArray{inputtype}, x)
+togpu(x) = CuArrays.adapt(CuArray, x)
 function preprocessstate(p::AtariPreprocessor, s)
     small = reshape(imresize(reshape(s, 160, 210), p.dimx, p.dimy), p.dimx, p.dimy, 1)
     if p.scale
@@ -85,7 +85,7 @@ function preprocessstate(p::AtariPreprocessor, s)
         small = floor.(p.inputtype, small)
     end
     if p.gpu
-        togpu(s, p.inputtype)
+        togpu(small)
     else
         p.inputtype.(small)
     end
@@ -93,7 +93,7 @@ end
 function preprocessstate(p::AtariPreprocessor, ::Void)
     s = zeros(p.inputtype, p.dimx, p.dimy, 1)
     if p.gpu
-        togpu(s, p.inputtype)
+        togpu(s)
     else
         s
     end

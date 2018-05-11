@@ -1,5 +1,5 @@
 using TabularReinforcementLearning, Flux
-# using CuArrays
+using CuArrays
 loadenvironment("atari")
 env = AtariEnv("pong")
 na = length(getMinimalActionSet(env.ale))
@@ -11,16 +11,16 @@ model = Chain(Linear(Float64(1/255)), Conv((8, 8), 4 => 32, relu, stride = (4, 4
 modeldqn = deepcopy(model);
 push!(modeldqn, Dense(512, na));
 learner = DQN(modeldqn, opttype = x -> Flux.RMSProp(x, .00025),
-              updatetargetevery = 10^4, replaysize = 10^6, nmarkov = 4,
+              updatetargetevery = 10^4, replaysize = 2*10^5, nmarkov = 4,
               startlearningat = 50000);
 # learner = DeepActorCritic(model, nh = 512, policylayer = Dense(512, na),
 #                           valuelayer = Dense(512, 1), 
 #                           nmarkov = 4, nsteps = 5)
 x = RLSetup(learner, 
             env,
-            ConstantNumberSteps(100),
-            preprocessor = AtariPreprocessor(gpu=false),
-            callbacks = [#Progress(10^3), 
+            ConstantNumberSteps(5*10^7),
+            preprocessor = AtariPreprocessor(gpu=true),
+            callbacks = [Progress(5*10^3), 
                          EvaluationPerEpisode(TotalReward())
                           ,LinearDecreaseEpsilon(5 * 10^4, 10^6, 1, .1)
                             ]);
