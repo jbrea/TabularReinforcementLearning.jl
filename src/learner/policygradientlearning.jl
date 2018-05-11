@@ -47,7 +47,7 @@ export PolicyGradientBackward
     nsteps::Int64 = typemax(Int64)
 end
 defaultpolicy(learner::Union{PolicyGradientForward, 
-                             PolicyGradientBackward}, buffer) = SoftmaxPolicy1()
+                             PolicyGradientBackward}, buffer) = SoftmaxPolicy()
 """
     EpisodicReinforce(; kwargs...) = EpisodicLearner(PolicyGradientForward(; kwargs...))
 """
@@ -127,7 +127,7 @@ end
 # update helper 
 
 getactionprobabilities(learner::AbstractPolicyGradient, s) =
-    getactionprobabilities(SoftmaxPolicy1(), getvalue(learner.params, s))
+    getactionprobabilities(SoftmaxPolicy(), getvalue(learner.params, s))
 
 function gradlogpolicy!(probs, state::Int, action, output, factor = 1.)
     na, ns = size(output)

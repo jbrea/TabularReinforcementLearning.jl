@@ -19,9 +19,8 @@ abstract type AbstractSoftmaxPolicy end
 mutable struct SoftmaxPolicy <: AbstractSoftmaxPolicy
     β::Float64
 end
-struct SoftmaxPolicy1 <: AbstractSoftmaxPolicy end
-SoftmaxPolicy(; β = 1.) = β == 1 ? SoftmaxPolicy1() : SoftmaxPolicy(β)
-export SoftmaxPolicy, SoftmaxPolicy1
+SoftmaxPolicy(; β = 1.) = SoftmaxPolicy(β)
+export SoftmaxPolicy
 
 function selectaction(policy::AbstractSoftmaxPolicy, values)
     if maximum(values) == Inf64
@@ -46,11 +45,15 @@ function getactionprobabilities(policy::AbstractSoftmaxPolicy, values)
 end
 
 @inline getexpvals(p::SoftmaxPolicy, values) = exp.(p.β .* (values - maximum(values)))
-@inline getexpvals(::SoftmaxPolicy1, values) = exp.((values - maximum(values)))
 
 # Samples from Categorical(exp(input)/sum(exp(input)))
-actsoftmax(policy::SoftmaxPolicy, values) = actsoftmax(policy.β .* values)
-actsoftmax(::SoftmaxPolicy1, values) = actsoftmax(values)
+function actsoftmax(policy::SoftmaxPolicy, values)
+    if policy.β == Inf
+        indmax(values)
+    else
+        actsoftmax(policy.β .* values)
+    end
+end
 function actsoftmax(input)
     unnormalized_probs = exp.(input)
     r = rand()*sum(unnormalized_probs)

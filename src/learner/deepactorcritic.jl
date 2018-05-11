@@ -13,7 +13,6 @@
     updateevery::Int64 = 1
     opttype::ToptT = Flux.ADAM
     opt::Topt = opttype(params)
-    inputtype::UnionAll = typeof(Flux.params(net)[1].data).name.wrapper{typeof(Flux.params(net)[1].data).parameters[1]}
     αcritic::Float64 = .1
     nmarkov::Int64 = 1
 end
@@ -23,9 +22,7 @@ DeepActorCritic(net; kargs...) = DeepActorCritic(; net = net, kargs...)
 function update!(learner::DeepActorCritic, b)
     learner.t += 1
     (!isfull(b) || learner.t % learner.updateevery != 0) && return
-    h1 = learner.net(convertinput(learner, 
-                                  getindex(b.states, 
-                                           learner.nmarkov, learner.nmarkov)))
+    h1 = learner.net(getindex(b.states, learner.nmarkov, learner.nmarkov))
     p1 = learner.policylayer(h1)
     v1 = learner.valuelayer(h1)[:]
     r, γeff = discountedrewards(view(b.rewards, learner.nmarkov:endof(b.rewards)), 
@@ -33,9 +30,7 @@ function update!(learner::DeepActorCritic, b)
                                 learner.γ)
     advantage = r - v1.data[1]
     if γeff > 0
-        h2 = learner.net(convertinput(learner, 
-                                      getindex(b.states, endof(b.states), 
-                                               learner.nmarkov)))
+        h2 = learner.net(getindex(b.states, endof(b.states), learner.nmarkov))
         v2 = learner.valuelayer(h2)
         advantage += γeff * v2.data[1] 
     end

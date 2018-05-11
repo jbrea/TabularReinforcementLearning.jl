@@ -110,3 +110,64 @@ function callback!(c::Progress, rlsetup, sraw, a, r, done)
 end
 
 getlastvaluestring(c) = ""
+
+mutable struct Episode
+    t::Int64
+    N::Int64
+end
+Episode(N) = Episode(0, N)
+function step!(c::Episode, done)
+    if done
+        c.t += 1
+        c.t % c.N == 0
+    else
+        false
+    end
+end
+mutable struct Step
+    t::Int64
+    N::Int64
+end
+Step(N) = Step(0, N)
+function step!(c::Step, done)
+    c.t += 1
+    c.t % c.N == 0
+end
+
+@with_kw mutable struct EvaluateGreedy{T,Tu}
+    ingreedy::Bool = false
+    callbacks::Array{Any, 1}
+    rlsetupcallbacks::Array{Any, 1} = []
+    rlsetuppolicy::Any
+    stoppingcriterion::T
+    every::Tu = Episode(10)
+end
+
+function callback!(c::EvaluateGreedy, rlsetup, sraw, a, r, done)
+    if c.ingreedy
+        for callback in c.callbacks
+            callback!(callback, rlsetup, sraw, a, r, done)
+        end
+        if isbreak!(c.stoppingcriterion, sraw, a, r, done)
+            c.ingreedy = false
+            rlsetup.islearning = true
+            rlsetup.fillbuffer = true
+            rlsetup.callbacks = c.rlsetupcallbacks
+            rlsetup.policy = c.rlsetuppolicy
+        end
+    end
+    if !c.ingreedy && step!(c.every, done)
+        c.ingreedy = true
+        rlsetup.islearning = false
+        rlsetup.fillbuffer = false
+        c.rlsetupcallbacks = rlsetup.callbacks
+        rlsetup.callbacks = [c]
+        c.rlsetuppolicy = rlsetup.policy
+        rlsetup.policy = greedypolicy(rlsetup.policy)
+    end
+end
+
+export EvaluateGreedy, Step, Episode
+greedypolicy(p::AbstractEpsilonGreedyPolicy) = EpsilonGreedyPolicy(0)
+greedypolicy(p::SoftmaxPolicy) = SoftmaxPolicy(Inf)
+        

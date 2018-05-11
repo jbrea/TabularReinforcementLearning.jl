@@ -59,12 +59,12 @@ end
     run!(learner, policy, callback, environment, metric, stoppingcriterion)
 """
 function learn!(rlsetup)
-    @unpack learner, buffer, callbacks, stoppingcriterion, islearning = rlsetup
+    @unpack learner, buffer, stoppingcriterion = rlsetup
     a = firststateaction!(rlsetup)
     while true
         sraw, a, r, done = step!(rlsetup, a)
-        if islearning; update!(learner, buffer); end
-        for callback in callbacks
+        if rlsetup.islearning; update!(learner, buffer); end
+        for callback in rlsetup.callbacks
             callback!(callback, rlsetup, sraw, a, r, done)
         end
         if isbreak!(stoppingcriterion, sraw, a, r, done); break; end

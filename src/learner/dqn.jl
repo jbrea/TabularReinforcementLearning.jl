@@ -26,12 +26,12 @@ function defaultbuffer(learner::Union{DQN, DeepActorCritic}, env, preprocessor)
 end
 function defaultpolicy(learner::Union{DQN, DeepActorCritic}, buffer)
     if learner.nmarkov == 1
-        typeof(learner) <: DQN ? EpsilonGreedyPolicy(.1) : SoftmaxPolicy1()
+        typeof(learner) <: DQN ? EpsilonGreedyPolicy(.1) : SoftmaxPolicy()
     else
         a = buffer.states.data
         data = getindex(a, map(x -> 1:x, size(a)[1:end-1])..., 1:learner.nmarkov)
         NMarkovPolicy(typeof(learner) <: DQN ? EpsilonGreedyPolicy(.1) : 
-                                               SoftmaxPolicy1(),
+                                               SoftmaxPolicy(),
                       ArrayCircularBuffer(data, learner.nmarkov, 0))
     end
 end
