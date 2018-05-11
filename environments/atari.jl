@@ -1,32 +1,11 @@
-using ArcadeLearningEnvironment, Images, Parameters
-import DataStructures: CircularBuffer
-import TabularReinforcementLearning
-import Flux
-const T = TabularReinforcementLearning
-import T.interact!, T.getstate, T.reset!, T.preprocessstate, T.selectaction,
-T.callback!
+using ArcadeLearningEnvironment, Parameters
+import Images: imresize
 
 struct AtariEnv
     ale::Ptr{Void}
     screen::Array{UInt8, 1}
     getscreen::Function
 end
-import ArcadeLearningEnvironment.getScreen
-function getScreen(p::Ptr, s::Array{Cuchar, 1})
-    sraw = getScreen(p)
-    for i in 1:length(s)
-        s[i] =  sraw[i] .>> 1
-    end
-end
-
-function getroms(romdir)
-    info("Downloading roms to $romdir")
-    tmpdir = mktempdir()
-    Base.LibGit2.clone("https://github.com/openai/atari-py", tmpdir)
-    mv(joinpath(tmpdir, "atari_py", "atari_roms"), romdir)
-    rm(tmpdir, recursive = true, force = true)
-end
-
 function AtariEnv(name; 
                   colorspace = "Grayscale",
                   frame_skip = 4,
@@ -58,6 +37,27 @@ function AtariEnv(name;
     end
     AtariEnv(ale, screen, getscreen)
 end
+
+import ArcadeLearningEnvironment.getScreen
+function getScreen(p::Ptr, s::Array{Cuchar, 1})
+    sraw = getScreen(p)
+    for i in 1:length(s)
+        s[i] =  sraw[i] .>> 1
+    end
+end
+
+function getroms(romdir)
+    info("Downloading roms to $romdir")
+    tmpdir = mktempdir()
+    Base.LibGit2.clone("https://github.com/openai/atari-py", tmpdir)
+    mv(joinpath(tmpdir, "atari_py", "atari_roms"), romdir)
+    rm(tmpdir, recursive = true, force = true)
+end
+
+
+import TabularReinforcementLearning: interact!, getstate, reset!, 
+preprocessstate, selectaction, callback!
+
 function interact!(a, env::AtariEnv)
     r = act(env.ale, Int32(a - 1))
     env.getscreen(env.ale, env.screen)
