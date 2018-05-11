@@ -18,20 +18,33 @@ function getScreen(p::Ptr, s::Array{Cuchar, 1})
         s[i] =  sraw[i] .>> 1
     end
 end
+
+function getroms(romdir)
+    info("Downloading roms to $romdir")
+    tmpdir = mktempdir()
+    Base.LibGit2.clone("https://github.com/openai/atari-py", tmpdir)
+    mv(joinpath(tmpdir, "atari_py", "atari_roms"), romdir)
+    rm(tmpdir, recursive = true, force = true)
+end
+
 function AtariEnv(name; 
                   colorspace = "Grayscale",
                   frame_skip = 4,
                   color_averaging = true,
-                  repeat_action_probability = 0.)
-    if isfile(name)
+                  repeat_action_probability = 0.,
+                  romdir = joinpath(Pkg.dir("TabularReinforcementLearning"), 
+                                    "environments", "atariroms"))
+    if !isdir(romdir) getroms(romdir) end
+    path = joinpath(romdir, name * ".bin")
+    if isfile(path)
         ale = ALE_new()
-        loadROM(ale, name)
+        loadROM(ale, path)
         setBool(ale, "color_averaging", color_averaging)
         setInt(ale, "frame_skip", Int32(frame_skip))
         setFloat(ale, "repeat_action_probability", 
                  Float32(repeat_action_probability))
     else
-        error("ROM $name could not be found.")
+        error("ROM $path not found.")
     end
     if colorspace == "Grayscale"
         screen = Array{Cuchar}(210*160)
@@ -58,20 +71,29 @@ reset!(env::AtariEnv) = reset_game(env.ale)
 
 @with_kw struct AtariPreprocessor
     gpu::Bool = false
+    dimx::Int64 = 80
+    dimy::Int64 = 105
+    scale::Bool = false
+    inputtype::DataType = scale ? Float32 : UInt8
 end
-togpu(x) = CuArrays.adapt(CuArray{UInt8}, x)
+togpu(x, inputtype) = CuArrays.adapt(CuArray{inputtype}, x)
 function preprocessstate(p::AtariPreprocessor, s)
-    s = floor.(UInt8, reshape(imresize(reshape(s, 160, 210), 80, 105), 80, 105, 1))
-    if p.gpu
-        togpu(s)
+    small = reshape(imresize(reshape(s, 160, 210), p.dimx, p.dimy), p.dimx, p.dimy, 1)
+    if p.scale
+        scale!(small, 1/255)
     else
-        s
+        small = floor.(p.inputtype, small)
+    end
+    if p.gpu
+        togpu(s, p.inputtype)
+    else
+        p.inputtype.(small)
     end
 end
 function preprocessstate(p::AtariPreprocessor, ::Void)
-    s = zeros(UInt8, 80, 105, 1)
+    s = zeros(p.inputtype, p.dimx, p.dimy, 1)
     if p.gpu
-        togpu(s)
+        togpu(s, p.inputtype)
     else
         s
     end

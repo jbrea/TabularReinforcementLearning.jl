@@ -15,13 +15,14 @@ include("stoppingcriterion.jl")
 include("callbacks.jl")
 include("preprocessor.jl")
 include("flux.jl")
-include("learner/tdlearning.jl")
-include("learner/prioritizedsweeping.jl")
-include("learner/policygradientlearning.jl")
-include("learner/mdplearner.jl")
-include("learner/montecarlo.jl")
-include("learner/deepactorcritic.jl")
-include("learner/dqn.jl")
+for (root, dirs, files) in walkdir("learner")
+    for file in files
+        if splitext(file)[end] == ".jl"
+            println("including $(joinpath(root, file)).")
+            include(joinpath(root, file))
+        end
+    end
+end
 include("rlsetup.jl")
 include("learn.jl")
 # include("comparisontools.jl")
