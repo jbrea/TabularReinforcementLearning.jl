@@ -1,15 +1,15 @@
-# run this file with julia -p 4 to use 4 multiple cores in the comparison
+# run this file with julia -p 4 to use 4 cores in the comparison
 @everywhere begin
 using TabularReinforcementLearning, Flux
 loadenvironment("cartpole")
 getenv() = (CartPole(), 4, 2)
-setup(learner, env) = RLSetup(learner, env, ConstantNumberEpisodes(8000),
-                              callbacks = [EvaluateGreedy(callback =
-                                        EvaluationPerEpisode(TotalReward(),
-                                                            returnmean = true),
-                                        stoppingcriterion =
-                                        ConstantNumberEpisodes(200),
-                                        every = Episode(200))])
+function setup(learner, env)
+    cb = EvaluateGreedy(callback = EvaluationPerEpisode(TotalReward(),
+                                                        returnmean = true),
+                        stoppingcriterion = ConstantNumberEpisodes(200),
+                        every = Episode(200))
+    RLSetup(learner, env, ConstantNumberEpisodes(8000), callbacks = [cb])
+end
 function acpg(i)
     env, ns, na = getenv()
     learner = ActorCriticPolicyGradient(na = na, ns = ns, α = .01,
@@ -33,6 +33,6 @@ using JLD2
 
 a = plotcomparison(res);
 a["legend pos"] = "south east";
-a["x label"] = "epochs";
-a["y label"] = "average episode length greedy policy"
+a["xlabel"] = "epochs";
+a["ylabel"] = "average episode length greedy policy"
 a

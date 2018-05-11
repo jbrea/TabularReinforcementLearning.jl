@@ -67,11 +67,13 @@ pushstateaction!(b::AdvantageBuffer, s, a) = push!(b.actions, a)
 mutable struct ArrayCircularBuffer{T}
     data::T
     capacity::Int64
+    start::Int64
     counter::Int64
+    full::Bool
 end
 function ArrayCircularBuffer(arraytype, datatype, elemshape, capacity)
     ArrayCircularBuffer(arraytype(zeros(datatype, elemshape..., capacity)),
-                        capacity, 0)
+                        capacity, 0, 0, false)
 end
 import Base.push!, Base.view, Base.endof, Base.getindex
 for N in 2:5
@@ -80,13 +82,18 @@ for N in 2:5
             setindex!(a.data, x, $(fill(Colon(), N-1)...), a.counter + 1)
             a.counter += 1
             a.counter = a.counter % a.capacity
+            if a.full 
+                a.start += 1 
+                a.start = a.start % a.capacity
+            end
+            if a.counter == 0 a.full = true end
             a.data
         end
     end
     for func in [:view, :getindex]
         @eval current_module() begin
             @inline function $func(a::ArrayCircularBuffer{<:AbstractArray{T, $N}}, i) where T
-                idx = (a.counter + i - 1) .% a.capacity + 1
+                idx = (a.start + i - 1) .% a.capacity + 1
                 $func(a.data, $(fill(Colon(), N-1)...), idx)
             end
             @inline function $func(a::ArrayCircularBuffer{<:AbstractArray{T, $N}}, i, nmarkov) where T
@@ -96,7 +103,7 @@ for N in 2:5
                 c = 1
                 for j in i
                     for k in j - nmarkov + 1:j
-                        idx[c] = (a.counter + k - 1) % a.capacity + 1
+                        idx[c] = (a.start + k - 1) % a.capacity + 1
                         c += 1
                     end
                 end
@@ -107,7 +114,7 @@ for N in 2:5
         end
     end
 end
-endof(a::ArrayCircularBuffer) = a.capacity
+endof(a::ArrayCircularBuffer) = a.full ? a.capacity : a.counter
 
 struct ArrayStateBuffer{Ts, Ta}
     states::ArrayCircularBuffer{Ts}

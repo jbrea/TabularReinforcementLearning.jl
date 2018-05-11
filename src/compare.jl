@@ -8,7 +8,7 @@ function compare(rlsetupcreators::Dict, N; callbackid = 1, verbose = false)
         tmp = []
         for (name, setupcreator) in rlsetupcreators
             if verbose
-                info("$(now()) \tStarting round $t, setup $name with seed $seed.")
+                info("$(now()) \tStarting comparison $t, setup $name with seed $seed.")
             end
             srand(seed)
             rlsetup = setupcreator(t)
