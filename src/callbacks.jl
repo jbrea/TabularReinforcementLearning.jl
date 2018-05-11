@@ -134,21 +134,21 @@ function step!(c::Step, done)
     c.t % c.N == 0
 end
 
-@with_kw mutable struct EvaluateGreedy{T,Tu}
+@with_kw mutable struct EvaluateGreedy{T,Tc,Tu}
     ingreedy::Bool = false
-    callbacks::Array{Any, 1}
+    callback::Tc
     rlsetupcallbacks::Array{Any, 1} = []
-    rlsetuppolicy::Any
+    rlsetuppolicy::Any = 1
     stoppingcriterion::T
     every::Tu = Episode(10)
+    values::Array{Any, 1} = []
 end
 
 function callback!(c::EvaluateGreedy, rlsetup, sraw, a, r, done)
     if c.ingreedy
-        for callback in c.callbacks
-            callback!(callback, rlsetup, sraw, a, r, done)
-        end
+        callback!(c.callback, rlsetup, sraw, a, r, done)
         if isbreak!(c.stoppingcriterion, sraw, a, r, done)
+            push!(c.values, getvalue(c.callback))
             c.ingreedy = false
             rlsetup.islearning = true
             rlsetup.fillbuffer = true
@@ -166,8 +166,21 @@ function callback!(c::EvaluateGreedy, rlsetup, sraw, a, r, done)
         rlsetup.policy = greedypolicy(rlsetup.policy)
     end
 end
+getvalue(c::EvaluateGreedy) = c.values
 
 export EvaluateGreedy, Step, Episode
 greedypolicy(p::AbstractEpsilonGreedyPolicy) = EpsilonGreedyPolicy(0)
 greedypolicy(p::SoftmaxPolicy) = SoftmaxPolicy(Inf)
-        
+
+import FileIO:save
+@with_kw struct SaveLearner{T}
+    every::T = Step(10^3)
+    filename::String = tempname()
+end
+export SaveLearner
+function callback!(c::SaveLearner, rlsetup, sraw, a, r, done)
+    if step!(c.every, done)
+        save(c.filename * "_$(c.every.t).jld2", 
+             Dict("learner" => rlsetup.learner))
+    end
+end

@@ -1,8 +1,5 @@
 using TabularReinforcementLearning, Flux
-include(joinpath(Pkg.dir("TabularReinforcementLearning"), "environments", 
-                 "classiccontrol", "cartpole.jl"))
-include(joinpath(Pkg.dir("TabularReinforcementLearning"), "environments", 
-                 "classiccontrol", "mountaincar.jl"))
+loadenvironment("cartpole")
 
 env = CartPole()
 # env = MountainCar(maxsteps = 10^4)
@@ -20,15 +17,12 @@ import TabularReinforcementLearning:preprocessstate
 preprocessstate(::FP, s) = Float32.(s)
 x = RLSetup(learner,
             env,
-            ConstantNumberSteps(4000 * 200),
+            ConstantNumberSteps(2*10^5),
 #             preprocessor = FP(),
             callbacks = [EvaluationPerEpisode(TotalReward()), Progress(),
-                         EvaluateGreedy(
-                         callbacks = [EvaluationPerEpisode(TotalReward())],
-                       stoppingcriterion = ConstantNumberEpisodes(200),
-                       rlsetuppolicy = 1, 
-                       every = Step(10^4))])
+                         SaveLearner(every = Step(2*10^4))])
 @time learn!(x)
+
 
 a = @pgf Axis({no_markers}, Plot(Coordinates(collect(1:length(x.callbacks[1].values)),
                                              x.callbacks[1].values)),

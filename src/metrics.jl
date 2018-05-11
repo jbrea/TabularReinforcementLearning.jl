@@ -84,6 +84,7 @@ Stores the value of the simple `metric` for each episode in `values`.
 struct EvaluationPerEpisode{T}
     values::Array{Float64, 1}
     metric::T
+    returnmean::Bool
 end
 """
     EvaluationPerEpisode(metric = MeanReward())
@@ -93,8 +94,9 @@ Initializes with empty `values` array and simple `metric` (default
 Other options are [`TimeSteps`](@ref) (to measure the lengths of episodes) or
 [`TotalReward`](@ref).
 """
-EvaluationPerEpisode(metric = MeanReward()) = EvaluationPerEpisode(Float64[],
-                                                                   metric)
+function EvaluationPerEpisode(metric = MeanReward(); returnmean = false)
+    EvaluationPerEpisode(Float64[], metric,returnmean)
+end
 function callback!(p::EvaluationPerEpisode, rlsetup, sraw, a, r, done)
     callback!(p.metric, rlsetup, sraw, a, r, done)
     if done
@@ -106,7 +108,6 @@ function reset!(p::EvaluationPerEpisode)
     reset!(p.metric)
     empty!(p.values)
 end
-getvalue(p::EvaluationPerEpisode) = p.values
 export EvaluationPerEpisode
 
 """
@@ -123,6 +124,7 @@ mutable struct EvaluationPerT{T}
     counter::Int64
     values::Array{Float64, 1}
     metric::T
+    returnmean::Bool
 end
 """
     EvaluationPerT(T, metric = MeanReward())
@@ -130,8 +132,9 @@ end
 Initializes with `T`, `counter` = 0, empty `values` array and simple `metric`
 (default [`MeanReward`](@ref)).  Another option is [`TotalReward`](@ref).
 """
-EvaluationPerT(T, metric = MeanReward()) = EvaluationPerT(T, 0, Float64[],
-                                                          metric)
+function EvaluationPerT(T, metric = MeanReward(); returnmean = false)
+    EvaluationPerT(T, 0, Float64[], metric, returnmean)
+end
 function callback!(p::EvaluationPerT, rlsetup, sraw, a, r, done)
     callback!(p.metric, rlsetup, sraw, a, r, done)
     p.counter += 1
@@ -146,7 +149,8 @@ function reset!(p::EvaluationPerT)
     p.counter = 0
     empty!(p.values)
 end
-getvalue(p::EvaluationPerT) = p.values
+getvalue(p::Union{EvaluationPerEpisode, EvaluationPerT}) = 
+    p.returnmean ? mean(p.values) : p.values
 export EvaluationPerT
 function getlastvaluestring(p::Union{EvaluationPerT, EvaluationPerEpisode})
     if length(p.values) > 0
@@ -179,8 +183,8 @@ Initializes with empty arrays.
 RecordAll() = RecordAll(Float64[], Int64[], [], Bool[])
 function callback!(p::RecordAll, rlsetup, sraw, a, r, done)
     push!(p.r, r)
-    push!(p.a, a)
-    push!(p.s, sraw)
+    push!(p.a, deepcopy(a))
+    push!(p.s, deepcopy(sraw))
     push!(p.done, done)
 end
 function reset!(p::RecordAll)

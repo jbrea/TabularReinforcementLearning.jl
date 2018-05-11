@@ -12,7 +12,7 @@ function AtariEnv(name;
                   color_averaging = true,
                   repeat_action_probability = 0.,
                   romdir = joinpath(Pkg.dir("TabularReinforcementLearning"), 
-                                    "environments", "atariroms"))
+                                    "src", "environments", "atariroms"))
     if !isdir(romdir) getroms(romdir) end
     path = joinpath(romdir, name * ".bin")
     if isfile(path)
