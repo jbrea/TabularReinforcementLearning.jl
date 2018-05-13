@@ -4,7 +4,6 @@ module TabularReinforcementLearning
 
 using DataStructures, Parameters
 include("helper.jl")
-include("forced.jl")
 include("buffers.jl")
 include("traces.jl")
 include("epsilongreedypolicies.jl")
@@ -23,6 +22,7 @@ for (root, dirs, files) in walkdir(joinpath(@__DIR__, "learner"))
         end
     end
 end
+include("forced.jl")
 include("rlsetup.jl")
 include("learn.jl")
 

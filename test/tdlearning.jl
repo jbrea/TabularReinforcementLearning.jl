@@ -1,4 +1,4 @@
-T = TabularReinforcementLearning
+import TabularReinforcementLearning: Buffer, pushstateaction!, pushreturn!
 episode = [(1, 2), (0., false, 3, 1), (1., false, 1, 2), (0., false, 2, 2), 
            (1., false, 3, 2)] # r, done, nexts, nexta
 γ = .9
@@ -31,10 +31,10 @@ for tdkind in [QLearning, Sarsa] #, ExpectedSarsa]
         buffer = Buffer()
         learner = tdkind(ns = 3, na = 2, γ = γ, λ = λ, α = α, initvalue = Inf64,
                          tracekind = tracekind)
-        T.pushstateaction!(buffer, episode[1]...)
+        pushstateaction!(buffer, episode[1]...)
         for (r, done, s, a) in episode[2:end]
-            T.pushreturn!(buffer, r, done)
-            T.pushstateaction!(buffer, s, a)
+            pushreturn!(buffer, r, done)
+            pushstateaction!(buffer, s, a)
             update!(learner, buffer)
         end
         @test isapprox(learner.params, results[tdkind, tracekind], atol = 1e-15) ||

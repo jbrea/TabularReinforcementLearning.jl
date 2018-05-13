@@ -1,3 +1,22 @@
+"""
+    mutable struct DeepActorCritic{Tnet, Tpl, Tplm, Tvl, ToptT, Topt}
+        nh::Int64 = 4
+        na::Int64 = 2
+        γ::Float64 = .9
+        nsteps::Int64 = 5
+        net::Tnet
+        policylayer::Tpl = Linear(nh, na)
+        policynet::Tplm = Flux.Chain(Flux.mapleaves(Flux.Tracker.data, net),
+                                 Flux.mapleaves(Flux.Tracker.data, policylayer))
+        valuelayer::Tvl = Linear(nh, 1)
+        params::Array{Any, 1} = vcat(map(Flux.params, [net, policylayer, valuelayer])...)
+        t::Int64 = 0
+        updateevery::Int64 = 1
+        opttype::ToptT = Flux.ADAM
+        opt::Topt = opttype(params)
+        αcritic::Float64 = .1
+        nmarkov::Int64 = 1
+"""
 @with_kw mutable struct DeepActorCritic{Tnet, Tpl, Tplm, Tvl, ToptT, Topt}
     nh::Int64 = 4
     na::Int64 = 2

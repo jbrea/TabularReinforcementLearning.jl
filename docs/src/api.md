@@ -4,55 +4,48 @@ New learners, policies, callbacks, environments, evaluation metrics or stopping
 criteria need to implement the following functions.
 
 ## Learners
-Learners that require only a (state, action, reward) triple and possibly the
-next state and action should implement the first definition. If the learner is
-also to be used with a NstepLearner one also needs to implement the second 
-definition.
 ```@docs
-update!
+update!(learner, buffer)
 ```
 
 ```@docs
-act(learner, policy, state)
+selectaction(learner, policy, state)
 ```
 
 ## Policies
 ```@docs
-act(policy, values)
+selectaction(policy, values)
 ```
 
 ```@docs
-getactionprobabilities
+getactionprobabilities(policy, state)
 ```
 
 ## Callbacks
 ```@docs
-callback!
+callback!(callback, rlsetup, state, action, reward, done)
 ```
 
 ## [Environments](@id api_environments)
 ```@docs
-interact!
+interact!(action, environment)
 ```
 
 ```@docs
-getstate
+getstate(environment)
 ```
 
 ```@docs
-reset!
+reset!(environment)
 ```
 
 ## Evaluation Metrics
-```@docs
-evaluate!
-```
 
 ```@docs
-getvalue
+getvalue(metric)
 ```
 
 ## Stopping Criteria
 ```@docs
-isbreak!
+isbreak!(stoppingcriterion, state, action, reward, done)
 ```

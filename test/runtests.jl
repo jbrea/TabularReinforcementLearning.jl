@@ -9,6 +9,7 @@ using Base.Test
 @testset "learn" begin include("learn.jl") end
 @testset "linear function approximation" begin include("linfuncapprox.jl") end
 @testset "preprocessor" begin include("preprocessors.jl") end
+@testset "buffers" begin include("buffer.jl") end
 # include("nsteptdlearning.jl")
 # @testset "policy gradient" begin include("policygradient.jl") end
 @testset "monte carlo" begin include("montecarlo.jl") end

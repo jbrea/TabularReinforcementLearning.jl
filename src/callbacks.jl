@@ -64,6 +64,20 @@ function callback!(c::ReduceEpsilonPerT, rlsetup, sraw, a, r, done)
 end
 export ReduceEpsilonPerT
 
+"""
+    mutable struct LinearDecreaseEpsilon
+        start::Int64
+        stop::Int64
+        initval::Float64
+        finalval::Float64
+        t::Int64
+        step::Float64
+
+Linearly decrease ϵ of an [`EpsilonGreedyPolicy`](@ref) from `initval` until 
+step `start` to `finalval` at step `stop`.
+
+Stepsize `step` = (finalval - initval)/(stop - start).
+"""
 mutable struct LinearDecreaseEpsilon
     start::Int64
     stop::Int64
@@ -73,6 +87,9 @@ mutable struct LinearDecreaseEpsilon
     step::Float64
 end
 export LinearDecreaseEpsilon
+"""
+    LinearDecreaseEpsilon(start, stop, initval, finalval)
+"""
 function LinearDecreaseEpsilon(start, stop, initval, finalval)
     step = (finalval - initval)/(stop - start)
     LinearDecreaseEpsilon(start, stop, initval, finalval, 0, step)
@@ -89,11 +106,21 @@ function callback!(c::LinearDecreaseEpsilon, rlsetup, sraw, a, r, done)
     end
 end
 
-@with_kw mutable struct Progress 
-    steps::Int64 = 10
-    laststopcountervalue::Int64 = 0
+"""
+    mutable struct Progress 
+        steps::Int64
+        laststopcountervalue::Int64
+
+Show `steps` times progress information during learning.
+"""
+mutable struct Progress 
+    steps::Int64
+    laststopcountervalue::Int64
 end
-Progress(steps) = Progress(steps = steps)
+"""
+    Progress(steps = 10) = Progress(steps, 0)
+"""
+Progress(steps = 10) = Progress(steps, 0)
 export Progress
 progressunit(stop::ConstantNumberSteps) = "steps"
 progressunit(stop::ConstantNumberEpisodes) = "episodes"
@@ -111,11 +138,12 @@ end
 
 getlastvaluestring(c) = ""
 
+
 mutable struct Episode
-    t::Int64
     N::Int64
+    t::Int64
 end
-Episode(N) = Episode(0, N)
+Episode(N) = Episode(N, 0)
 function step!(c::Episode, done)
     if done
         c.t += 1
@@ -125,10 +153,10 @@ function step!(c::Episode, done)
     end
 end
 mutable struct Step
-    t::Int64
     N::Int64
+    t::Int64
 end
-Step(N) = Step(0, N)
+Step(N) = Step(N, 0)
 function step!(c::Step, done)
     c.t += 1
     c.t % c.N == 0
@@ -143,12 +171,37 @@ end
     every::Tu = Episode(10)
     values::Array{Any, 1} = []
 end
+"""
+    EvaluateGreedy(callback, stoppincriterion; every = Episode(10))
+
+Evaluate an rlsetup greedily by leaving the normal learning loop and evaluating
+the agent with `callback` until `stoppingcriterion` is met, at which point
+normal learning is resumed. This is done `every` Nth Episode (where N = 10 by
+default) or every Nth Step (e.g. `every = Step(10)`).
+
+Example:
+
+    eg = EvaluateGreedy(EvaluationPerEpisode(TotalReward(), returnmean = true),
+                        ConstantNumberEpisodes(10), every = Episode(100))
+    rlsetup = RLSetup(learner, environment, stoppingcriterion, callbacks = [eg])
+    learn!(rlsetup)
+    getvalue(eg)
+
+Leaves the learning loop every 100th episode to estimate the average total reward
+per episode, by running a greedy policy for 10 episodes.
+"""
+function EvaluateGreedy(callback, stoppingcriterion; every = Episode(10))
+    EvaluateGreedy(callback = callback, stoppingcriterion = stoppingcriterion,
+                   every = every)
+end
+
 
 function callback!(c::EvaluateGreedy, rlsetup, sraw, a, r, done)
     if c.ingreedy
         callback!(c.callback, rlsetup, sraw, a, r, done)
         if isbreak!(c.stoppingcriterion, sraw, a, r, done)
             push!(c.values, getvalue(c.callback))
+            reset!(c.callback)
             c.ingreedy = false
             rlsetup.islearning = true
             rlsetup.fillbuffer = true
@@ -173,6 +226,14 @@ greedypolicy(p::AbstractEpsilonGreedyPolicy) = EpsilonGreedyPolicy(0)
 greedypolicy(p::SoftmaxPolicy) = SoftmaxPolicy(Inf)
 
 import FileIO:save
+"""
+    @with_kw struct SaveLearner{T}
+        every::T = Step(10^3)
+        filename::String = tempname()
+
+Save learner every Nth Step (or Nth Episode) to filename_i.jld2, where i is the
+step (or episode) at which the learner is saved.
+"""
 @with_kw struct SaveLearner{T}
     every::T = Step(10^3)
     filename::String = tempname()

@@ -19,6 +19,15 @@ function MDPLearner(mdp, γ::Float64)
     return MDPLearner(γ = γ, mdp = mdp)
 end
 
+@inline function selectaction(learner::MDPLearner, 
+                              policy::AbstractEpsilonGreedyPolicy, state)
+    if rand() < policy.ϵ
+        rand(1:learner.mdp.na)
+    else
+        learner.policy[state]
+    end
+end
+
 # solve MDP
 
 function get_optimal_policy_given_values!(mdplearner::MDPLearner)

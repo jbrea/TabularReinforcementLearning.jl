@@ -184,7 +184,6 @@ function run!(mdp::MDP, action::Int64)
         mdp.state = sample(mdp.trans_probs[action, mdp.state])
     end
 end
-export run!
 
 """
     run!(mdp::MDP, policy::Array{Int64, 1}) = run!(mdp, policy[mdp.state])

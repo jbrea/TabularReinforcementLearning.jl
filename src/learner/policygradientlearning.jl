@@ -1,11 +1,15 @@
 """
     mutable struct PolicyGradientBackward <: AbstractPolicyGradient
-        α::Float64
-        γ::Float64
-        params::Array{Float64, 2}
-        traces::AccumulatingTraces
-        biascorrector::AbstractBiasCorrector
-        
+        ns::Int64 = 10
+        na::Int64 = 4
+        γ::Float64 = .9
+        α::Float64 = .1
+        initvalue::Float64 = 0.
+        params::Array{Float64, 2} = zeros(na, ns) + initvalue
+        traces::AccumulatingTraces = AccumulatingTraces(ns, na, 1., γ, 
+                                                        trace = zeros(na, ns))
+        biascorrector::T = NoBiasCorrector()
+    
 Policy gradient learning in the backward view.
 
 The parameters are updated according to
@@ -31,10 +35,14 @@ end
 export PolicyGradientBackward
 """
     mutable struct PolicyGradientForward <: AbstractPolicyGradient
-        α::Float64
-        γ::Float64
-        params::Array{Float64, 2}
-        biascorrector::AbstractBiasCorrector
+        ns::Int64 = 10
+        na::Int64 = 4
+        γ::Float64 = .9
+        α::Float64 = .1
+        initvalue::Float64 = 0.
+        params::Array{Float64, 2} = zeros(na, ns) + initvalue
+        biascorrector::Tb = NoBiasCorrector()
+        nsteps::Int64 = typemax(Int64)
 """
 @with_kw struct PolicyGradientForward{Tb} <: AbstractPolicyGradient
     ns::Int64 = 10
@@ -48,8 +56,9 @@ export PolicyGradientBackward
 end
 defaultpolicy(learner::Union{PolicyGradientForward, 
                              PolicyGradientBackward}, buffer) = SoftmaxPolicy()
+
 """
-    EpisodicReinforce(; kwargs...) = EpisodicLearner(PolicyGradientForward(; kwargs...))
+    EpisodicReinforce(; kwargs...) = PolicyGradientForward(; kwargs...)
 """
 EpisodicReinforce(; kwargs...) = PolicyGradientForward(; kwargs...)
 export EpisodicReinforce

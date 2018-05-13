@@ -4,7 +4,6 @@ struct Buffer{Ts, Ta}
     rewards::CircularBuffer{Float64}
     done::CircularBuffer{Bool}
 end
-export Buffer
 function Buffer(; statetype = Int64, actiontype = Int64, 
                   capacity = 2, capacitystates = capacity,
                   capacityrewards = capacity - 1)
@@ -42,27 +41,6 @@ function pushreturn!(b::EpisodeBuffer, r, done)
     push!(b.rewards, r)
     push!(b.done, done)
 end
-export EpisodeBuffer
-
-struct AdvantageBuffer{Tg, Ta}
-    pg::CircularBuffer{Tg}
-    actions::CircularBuffer{Ta}
-    values::CircularBuffer{Float64}
-    rewards::CircularBuffer{Float64}
-    done::CircularBuffer{Bool}
-end
-export AdvantageBuffer
-function AdvantageBuffer(; gradienttype = Array{Any, 1}, actiontype = Int64, 
-                           nsteps = 1, capacity = nsteps + 1, γ = .9)
-    AdvantageBuffer(CircularBuffer{gradienttype}(capacity),
-                    CircularBuffer{actiontype}(capacity),
-                    CircularBuffer{Float64}(capacity),
-                    CircularBuffer{Float64}(capacity - 1),
-                    CircularBuffer{Bool}(capacity - 1))
-end
-pushstateaction!(b::AdvantageBuffer, s, a) = push!(b.actions, a)
-
-
 
 mutable struct ArrayCircularBuffer{T}
     data::T
@@ -122,7 +100,6 @@ struct ArrayStateBuffer{Ts, Ta}
     rewards::CircularBuffer{Float64}
     done::CircularBuffer{Bool}
 end
-export ArrayStateBuffer
 function ArrayStateBuffer(; arraytype = Array, datatype = Float64, 
                             elemshape = (1), actiontype = Int64, 
                             capacity = 2, capacitystates = capacity,
@@ -136,4 +113,4 @@ end
 pushstate!(b::ArrayStateBuffer, s) = push!(b.states, s)
 
 import DataStructures.isfull
-isfull(b::Union{Buffer, AdvantageBuffer, ArrayStateBuffer}) = isfull(b.rewards)
+isfull(b::Union{Buffer, ArrayStateBuffer}) = isfull(b.rewards)

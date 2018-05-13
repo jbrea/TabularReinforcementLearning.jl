@@ -1,3 +1,20 @@
+"""
+    mutable struct DQN{Tnet,TnetT,ToptT,Topt}
+        γ::Float64 = .99
+        net::TnetT
+        targetnet::Tnet = Flux.mapleaves(Flux.Tracker.data, deepcopy(net))
+        policynet::Tnet = Flux.mapleaves(Flux.Tracker.data, net)
+        updatetargetevery::Int64 = 500
+        t::Int64 = 0
+        updateevery::Int64 = 1
+        opttype::ToptT = Flux.ADAM
+        opt::Topt = opttype(Flux.params(net))
+        startlearningat::Int64 = 10^3
+        minibatchsize::Int64 = 32
+        doubledqn::Bool = true
+        nmarkov::Int64 = 1
+        replaysize::Int64 = 10^4
+"""
 @with_kw mutable struct DQN{Tnet,TnetT,ToptT,Topt}
     γ::Float64 = .99
     net::TnetT

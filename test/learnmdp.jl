@@ -8,8 +8,7 @@ x = RLSetup(learner = QLearning(ns = 5, na = 3, γ = γ, λ = 0., α = 1e-3),
 learn!(x)
 @test mdpl.values ≈ getvalues(x.learner) atol=0.3
 
-include(joinpath(Pkg.dir("TabularReinforcementLearning"),
-                 "environments", "discretestates", "randommdp.jl"))
+loadenvironment("randommdp")
 mdp = DetTreeMDP()
 mdpl = MDPLearner(mdp = mdp, γ =.9); policy_iteration!(mdpl)
 x = RLSetup(learner = mdpl, policy = EpsilonGreedyPolicy(0), 

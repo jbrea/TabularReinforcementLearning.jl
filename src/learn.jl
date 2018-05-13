@@ -1,31 +1,3 @@
-@inline getvalue(params, state::Int) = params[:, state]
-@inline getvalue(params::Vector, state::Int) = params[state]
-@inline getvalue(params, action::Int, state::Int) = params[action, state]
-@inline getvalue(params, state::AbstractArray) = params * state
-@inline getvalue(params::Vector, state::Vector) = dot(params, state)
-@inline getvalue(params, action::Int, state::AbstractArray) = 
-    dot(view(params, action, :), state)
-
-@inline function selectaction(learner::Union{TDLearner, AbstractPolicyGradient}, 
-                              policy,
-                              state)
-    selectaction(policy, getvalue(learner.params, state))
-end
-@inline function selectaction(learner::Union{SmallBackups, MonteCarlo}, 
-                              policy,
-                              state)
-    selectaction(policy, getvalue(learner.Q, state))
-end
-@inline function selectaction(learner::MDPLearner, 
-                              policy::AbstractEpsilonGreedyPolicy, state)
-    if rand() < policy.ϵ
-        rand(1:learner.mdp.na)
-    else
-        learner.policy[state]
-    end
-end
-
-
 """
     learn!(learner, policy, callback, environment, metric, stoppingcriterion)
 """
@@ -34,7 +6,10 @@ end
     s0, r0, done0 = interact!(a, environment)
     s, r, done = preprocess(preprocessor, s0, r0, done0)
     if fillbuffer; pushreturn!(buffer, r, done) end
-    if done; s = preprocessstate(preprocessor, reset!(environment)) end
+    if done
+        s0 = reset!(environment)
+        s = preprocessstate(preprocessor, s0) 
+    end
     if fillbuffer; pushstate!(buffer, s) end
     a = selectaction(learner, policy, s)
     if fillbuffer pushaction!(buffer, a) end
@@ -56,7 +31,9 @@ end
 end
 
 """
-    run!(learner, policy, callback, environment, metric, stoppingcriterion)
+    learn!(rlsetup)
+
+Runs an [`rlsetup`](@ref) with learning.
 """
 function learn!(rlsetup)
     @unpack learner, buffer, stoppingcriterion = rlsetup
@@ -70,11 +47,23 @@ function learn!(rlsetup)
         if isbreak!(stoppingcriterion, sraw, a, r, done); break; end
     end
 end
+"""
+    learn!(rlsetups::Array{<:RLSetup, 1})
+
+Runs [`rlsetups`](@ref) asynchronously with learning. See [`tosync`](@ref) for
+constructing a list of rlsetups with a learner with shared parameters.
+"""
 function learn!(rlsetups::Array{<:RLSetup, 1})
     Threads.@threads for rlsetup in rlsetups
         learn!(rlsetup)
     end
 end
+
+"""
+    run!(rlsetup)
+
+Runs an [`rlsetup`](@ref) without learning.
+"""
 function run!(rlsetup::RLSetup)
     @unpack islearning, fillbuffer = rlsetup
     rlsetup.islearning = false

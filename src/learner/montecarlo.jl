@@ -1,8 +1,12 @@
 """
     mutable struct MonteCarlo <: AbstractReinforcementLearner
-        Nsa::Array{Int64, 2}
-        γ::Float64
-        Q::Array{Float64, 2}
+        ns::Int64 = 10
+        na::Int64 = 4
+        γ::Float64 = .9
+        initvalue = 0.
+        Nsa::Array{Int64, 2} = zeros(Int64, na, ns)
+        Q::Array{Float64, 2} = zeros(na, ns) + initvalue
+
 
 Estimate Q values by averaging over returns.
 """
@@ -17,6 +21,7 @@ end
 function defaultbuffer(learner::MonteCarlo, env, preprocessor)
     EpisodeBuffer(statetype = typeof(preprocessstate(preprocessor, getstate(env))))
 end
+
 export MonteCarlo
 
 function update!(learner::MonteCarlo, buffer)

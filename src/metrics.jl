@@ -162,17 +162,17 @@ end
 
 """
     struct RecordAll
-        r::Array{Float64, 1}
-        a::Array{Int64, 1}
-        s::Array{Int64, 1}
+        rewards::Array{Float64, 1}
+        actions::Array{Int64, 1}
+        states::Array{Int64, 1}
         done::Array{Bool, 1}
 
 Records everything.
 """
 struct RecordAll
-    r::Array{Float64, 1}
-    a::Array{Int64, 1}
-    s::Array{Any, 1}
+    rewards::Array{Float64, 1}
+    actions::Array{Int64, 1}
+    states::Array{Any, 1}
     done::Array{Bool, 1}
 end
 """
@@ -182,13 +182,13 @@ Initializes with empty arrays.
 """
 RecordAll() = RecordAll(Float64[], Int64[], [], Bool[])
 function callback!(p::RecordAll, rlsetup, sraw, a, r, done)
-    push!(p.r, r)
-    push!(p.a, deepcopy(a))
-    push!(p.s, deepcopy(sraw))
+    push!(p.rewards, r)
+    push!(p.actions, deepcopy(a))
+    push!(p.states, deepcopy(sraw))
     push!(p.done, done)
 end
 function reset!(p::RecordAll)
-    empty!(p.r); empty!(p.a); empty!(p.s); empty!(p.done)
+    empty!(p.rewards); empty!(p.actions); empty!(p.states); empty!(p.done)
 end
 getvalue(p::RecordAll) = p
 export RecordAll

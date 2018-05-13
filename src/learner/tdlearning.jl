@@ -17,6 +17,12 @@ QLearning(; kargs...) = TDLearner(; endvaluepolicy = :QLearning, kargs...)
 ExpectedSarsa(; kargs...) = TDLearner(; endvaluepolicy = VeryOptimisticEpsilonGreedyPolicy(.1), kargs...)
 export Sarsa, QLearning, ExpectedSarsa
 
+@inline function selectaction(learner::Union{TDLearner, AbstractPolicyGradient}, 
+                              policy,
+                              state)
+    selectaction(policy, getvalue(learner.params, state))
+end
+
 
 # td error
 

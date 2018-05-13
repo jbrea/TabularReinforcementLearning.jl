@@ -1,3 +1,15 @@
+"""
+    @with_kw mutable struct RLSetup{Tl,Tb,Tp,Tpp,Te,Ts}
+        learner::Tl
+        environment::Te
+        stoppingcriterion::Ts
+        preprocessor::Tpp = NoPreprocessor()
+        buffer::Tb = defaultbuffer(learner, environment, preprocessor)
+        policy::Tp = defaultpolicy(learner, buffer)
+        callbacks::Array{Any, 1} = []
+        islearning::Bool = true
+        fillbuffer::Bool = islearning
+"""
 @with_kw mutable struct RLSetup{Tl,Tb,Tp,Tpp,Te,Ts}
     learner::Tl
     environment::Te
@@ -25,6 +37,7 @@ function defaultbuffer(learner, env, preprocessor)
     end
 end
 
+# TODO: only share params
 function toasync(rlsetup, createenv, n)
     [reconstruct(deepcopy(rlsetup), learner = rlsetup.learner, 
                                     environment = createenv()) for i in 1:n]
