@@ -12,4 +12,9 @@ Modules = [TabularReinforcementLearning]
 Pages   = ["softmaxpolicy.jl"]
 ```
 
+## Forced Policy and Episode
+```@autodocs
+Modules = [TabularReinforcementLearning]
+Pages   = ["forced.jl"]
+```
 

@@ -38,3 +38,27 @@ x2 = RLSetup(Agent(learner2, policy = EpsilonGreedyPolicy(.01),
              EvaluationPerEpisode(TotalReward()),
              ConstantNumberSteps(10^7));
 @time learn!(x2)
+
+env = AtariEnv("breakout")
+na = length(getMinimalActionSet(env.ale))
+model = Chain(x -> Float64.(x./255), Conv((8, 8), 4 => 16, relu, stride = (4, 4)), 
+                         Conv((4, 4), 16 => 32, relu, stride = (2, 2)),
+                         x -> reshape(x, :, size(x, 4)),
+                         Dense(2048, 512, relu));
+modeldqn = deepcopy(model);
+push!(modeldqn, Dense(512, na));
+learner = DQN(modeldqn, opttype = x -> Flux.RMSProp(x, .00025),
+              updatetargetevery = 10^4, replaysize = 10^6, nmarkov = 4,
+              startlearningat = 50000);
+learner = DeepActorCritic(model, nh = 512, policylayer = Dense(512, na),
+                          valuelayer = Dense(512, 1), 
+                          nmarkov = 4, nsteps = 5)
+x = RLSetup(learner, 
+            env,
+            ConstantNumberSteps(5*10^7),
+            preprocessor = AtariPreprocessor(gpu=true),
+            callbacks = [Progress(5*10^3), 
+                         EvaluationPerEpisode(TotalReward()),
+                         LinearDecreaseEpsilon(5 * 10^4, 10^6, 1, .1)]);
+@time learn!(x)
+

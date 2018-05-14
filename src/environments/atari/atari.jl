@@ -1,5 +1,5 @@
-using ArcadeLearningEnvironment, Parameters
 import Images: imresize
+using ArcadeLearningEnvironment, Parameters
 
 struct AtariEnv
     ale::Ptr{Void}
@@ -70,18 +70,26 @@ reset!(env::AtariEnv) = reset_game(env.ale)
 
 @with_kw struct AtariPreprocessor
     gpu::Bool = false
+    croptosquare::Bool = false
+    cropfromrow::Int64 = 34
     dimx::Int64 = 80
-    dimy::Int64 = 105
+    dimy::Int64 = croptosquare ? 80 : 105
     scale::Bool = false
     inputtype::DataType = scale ? Float32 : UInt8
 end
 togpu(x) = CuArrays.adapt(CuArray, x)
 function preprocessstate(p::AtariPreprocessor, s)
-    small = reshape(imresize(reshape(s, 160, 210), p.dimx, p.dimy), p.dimx, p.dimy, 1)
+    if p.croptosquare
+        tmp = reshape(s, 160, 210)[:,p.cropfromrow:p.cropfromrow + 159]
+        small = reshape(imresize(tmp, p.dimx, p.dimy), p.dimx, p.dimy, 1)
+    else
+        small = reshape(imresize(reshape(s, 160, 210), p.dimx, p.dimy), 
+                        p.dimx, p.dimy, 1)
+    end
     if p.scale
         scale!(small, 1/255)
     else
-        small = floor.(p.inputtype, small)
+        small = ceil.(p.inputtype, small)
     end
     if p.gpu
         togpu(small)

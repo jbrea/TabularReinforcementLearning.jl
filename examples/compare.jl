@@ -13,7 +13,7 @@ function setup(learner, env, preprocessor = NoPreprocessor())
 end
 function acpg(i)
     env, ns, na = getenv()
-    learner = ActorCriticPolicyGradient(na = na, ns = ns, α = .01,
+    learner = ActorCriticPolicyGradient(na = na, ns = ns, α = .02,
                                         αcritic = 0.01, nsteps = 25)
     setup(learner, env)
 end
@@ -23,7 +23,7 @@ function dqn(i)
                   updateevery = 1, updatetargetevery = 100,
                   startlearningat = 50, minibatchsize = 32,
                   doubledqn = true, replaysize = 10^3, 
-                  opttype = x -> ADAM(x, .001)) 
+                  opttype = x -> ADAM(x, .0005)) 
     setup(learner, env)
 end
 function tilingsarsa(i)

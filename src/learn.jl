@@ -1,6 +1,3 @@
-"""
-    learn!(learner, policy, callback, environment, metric, stoppingcriterion)
-"""
 @inline function step!(rlsetup, a)
     @unpack learner, policy, buffer, preprocessor, environment, fillbuffer = rlsetup
     s0, r0, done0 = interact!(a, environment)
@@ -33,7 +30,7 @@ end
 """
     learn!(rlsetup)
 
-Runs an [`rlsetup`](@ref) with learning.
+Runs an [`rlsetup`](@ref RLSetup) with learning.
 """
 function learn!(rlsetup)
     @unpack learner, buffer, stoppingcriterion = rlsetup
@@ -50,7 +47,7 @@ end
 """
     learn!(rlsetups::Array{<:RLSetup, 1})
 
-Runs [`rlsetups`](@ref) asynchronously with learning. See [`tosync`](@ref) for
+Runs [`rlsetups`](@ref RLSetup) asynchronously with learning. See [`toasync`](@ref) for
 constructing a list of rlsetups with a learner with shared parameters.
 """
 function learn!(rlsetups::Array{<:RLSetup, 1})
@@ -62,7 +59,7 @@ end
 """
     run!(rlsetup)
 
-Runs an [`rlsetup`](@ref) without learning.
+Runs an [`rlsetup`](@ref RLSetup) without learning.
 """
 function run!(rlsetup::RLSetup)
     @unpack islearning, fillbuffer = rlsetup

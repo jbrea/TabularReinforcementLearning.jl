@@ -1,5 +1,5 @@
 ```@autodocs
 Modules = [TabularReinforcementLearning]
-Pages   = ["learn.jl"]
+Pages   = ["rlsetup.jl", "learn.jl"]
 ```
 

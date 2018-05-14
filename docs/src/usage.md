@@ -4,10 +4,10 @@
 2. Choose an [environment](@ref environments).
 3. Choose a [stopping criterion](@ref stop).
 4. (Optionally) choose [callbacks](@ref).
-5. (Optionally) choose a [preprocessor](@ref).
+5. (Optionally) choose a [preprocessor](@ref preprocessors).
 6. Define an [`RLSetup`](@ref).
 7. Learn with [`learn!`](@ref).
-8. Look at results with [`getvalue`](@ref).
+8. Look at results with [`getvalue`](@ref getvalue).
 
 ### Example 1
 

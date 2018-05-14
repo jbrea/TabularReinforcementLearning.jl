@@ -4,48 +4,58 @@ New learners, policies, callbacks, environments, evaluation metrics or stopping
 criteria need to implement the following functions.
 
 ## Learners
-```@docs
+```
 update!(learner, buffer)
 ```
+Returns nothing.
 
-```@docs
+```
 selectaction(learner, policy, state)
 ```
+Returns an action.
 
 ## Policies
-```@docs
+```
 selectaction(policy, values)
 ```
+Returns an action.
 
-```@docs
+```
 getactionprobabilities(policy, state)
 ```
+Returns a normalized (1-norm) vector with non-negative entries.
 
 ## Callbacks
-```@docs
+```
 callback!(callback, rlsetup, state, action, reward, done)
 ```
+Returns nothing.
 
 ## [Environments](@id api_environments)
-```@docs
+```
 interact!(action, environment)
 ```
+Returns state, reward, done.
 
-```@docs
+```
 getstate(environment)
 ```
+Returns reward, done.
 
-```@docs
+```
 reset!(environment)
 ```
+Returns nothing.
 
-## Evaluation Metrics
+## [Evaluation Metrics](@id getvalue)
 
-```@docs
+```
 getvalue(metric)
 ```
+Any return value allowed.
 
 ## Stopping Criteria
-```@docs
+```
 isbreak!(stoppingcriterion, state, action, reward, done)
 ```
+Returns true or false.

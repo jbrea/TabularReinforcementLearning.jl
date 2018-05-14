@@ -38,6 +38,13 @@ function defaultbuffer(learner, env, preprocessor)
 end
 
 # TODO: only share params
+"""
+    toasync(rlsetup, createenv, n)
+
+Returns a list of `n` rlsetups, similar to `rlsetup` but with shared parameters
+of the learner. Each learner interacts with another instance of the environment
+generated with the 0-argument function `createenv`.
+"""
 function toasync(rlsetup, createenv, n)
     [reconstruct(deepcopy(rlsetup), learner = rlsetup.learner, 
                                     environment = createenv()) for i in 1:n]
