@@ -46,8 +46,9 @@ of the learner. Each learner interacts with another instance of the environment
 generated with the 0-argument function `createenv`.
 """
 function toasync(rlsetup, createenv, n)
-    [reconstruct(deepcopy(rlsetup), learner = rlsetup.learner, 
-                                    environment = createenv()) for i in 1:n]
-
+    w = params(rlsetup.learner)
+    [reconstruct(deepcopy(rlsetup), 
+                 learner = reconstructwithparams(deepcopy(rlsetup.learner), w), 
+                 environment = createenv()) for i in 1:n]
 end
 export toasync

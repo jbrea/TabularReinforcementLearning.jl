@@ -18,8 +18,8 @@
 @with_kw mutable struct DQN{Tnet,TnetT,ToptT,Topt}
     γ::Float64 = .99
     net::TnetT
-    targetnet::Tnet = Flux.mapleaves(Flux.Tracker.data, deepcopy(net))
     policynet::Tnet = Flux.mapleaves(Flux.Tracker.data, net)
+    targetnet::Tnet = deepcopy(policynet)
     updatetargetevery::Int64 = 500
     t::Int64 = 0
     updateevery::Int64 = 1
@@ -49,9 +49,7 @@ function defaultpolicy(learner::Union{DQN, DeepActorCritic}, buffer)
         data = getindex(a, map(x -> 1:x, size(a)[1:end-1])..., 1:learner.nmarkov)
         NMarkovPolicy(typeof(learner) <: DQN ? EpsilonGreedyPolicy(.1) : 
                                                SoftmaxPolicy(),
-                      ArrayCircularBuffer(data, learner.nmarkov, 
-                                          learner.nmarkov - 1, 
-                                          learner.nmarkov - 1, false))
+                      ArrayCircularBuffer(data, learner.nmarkov, 0, 0, false))
     end
 end
 
@@ -68,7 +66,7 @@ end
     else
         push!(policy.buffer, state)
         selectaction(policy.policy, 
-                     learner.policynet(getindex(policy.buffer, 
+                     learner.policynet(nmarkovgetindex(policy.buffer, 
                                                 endof(policy.buffer),
                                                 learner.nmarkov)))
     end
@@ -80,15 +78,15 @@ end
 import StatsBase
 function update!(learner::DQN, b)
     learner.t += 1
-    (learner.t < learner.startlearningat || 
-     learner.t % learner.updateevery != 0) && return
     if learner.t % learner.updatetargetevery == 0
         learner.targetnet = deepcopy(learner.policynet)
     end
+    (learner.t < learner.startlearningat || 
+     learner.t % learner.updateevery != 0) && return
     indices = StatsBase.sample(learner.nmarkov:length(b.rewards), 
                                learner.minibatchsize, replace = false)
-    qa = learner.net(getindex(b.states, indices, learner.nmarkov))
-    qat = learner.targetnet(getindex(b.states, indices + 1, learner.nmarkov))
+    qa = learner.net(nmarkovgetindex(b.states, indices, learner.nmarkov))
+    qat = learner.targetnet(nmarkovgetindex(b.states, indices + 1, learner.nmarkov))
     q = selecta(qa, b.actions[indices])
     rs = Float64[]
     for (k, i) in enumerate(indices)

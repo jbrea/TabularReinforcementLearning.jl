@@ -74,14 +74,14 @@ for N in 2:5
                 idx = (a.start + i - 1) .% a.capacity + 1
                 $func(a.data, $(fill(Colon(), N-1)...), idx)
             end
-            @inline function $func(a::ArrayCircularBuffer{<:AbstractArray{T, $N}}, i, nmarkov) where T
+            @inline function $(Symbol(:nmarkov, func))(a::ArrayCircularBuffer{<:AbstractArray{T, $N}}, i, nmarkov) where T
                 nmarkov == 1 && return $func(a, i)
                 numi = typeof(i) <: Number ? 1 : length(i)
                 idx = zeros(Int64, numi*nmarkov)
                 c = 1
                 for j in i
                     for k in j - nmarkov + 1:j
-                        idx[c] = (a.start + k - 1) % a.capacity + 1
+                        idx[c] = (a.capacity + a.start + k - 1) % a.capacity + 1
                         c += 1
                     end
                 end

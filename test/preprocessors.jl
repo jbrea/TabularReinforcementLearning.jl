@@ -1,4 +1,4 @@
-import TabularReinforcementLearning: preprocessstate
+import TabularReinforcementLearning: preprocessstate, Box
 for perdim in [true, false]
     p = StateAggregator([0, -5, 1], [3, 9, 2], [8, 10, 12], perdimension = perdim)
     if perdim

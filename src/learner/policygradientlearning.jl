@@ -72,7 +72,12 @@ ActorCriticPolicyGradient(; nsteps = 1, γ = .9, ns = 10,
                         ns = ns, γ = γ, nsteps = nsteps, kargs...)
 export ActorCriticPolicyGradient
 
-
+params(learner::AbstractPolicyGradient) = [learner.params, 
+                                           params(learner.biascorrector)]
+function reconstructwithparams(learner::AbstractPolicyGradient, w)
+    reconstruct(learner, params = w[1], 
+                biascorrector = reconstruct(learner.biascorrector, w[2]))
+end
 # bias correctors
 
 """

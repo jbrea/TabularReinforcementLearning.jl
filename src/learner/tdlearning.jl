@@ -22,7 +22,8 @@ export Sarsa, QLearning, ExpectedSarsa
                               state)
     selectaction(policy, getvalue(learner.params, state))
 end
-
+params(learner::TDLearner) = learner.params
+reconstructwithparams(learner::TDLearner, w) = reconstruct(learner, params = w)
 
 # td error
 
