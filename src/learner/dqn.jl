@@ -65,10 +65,11 @@ function huberloss(δ = 1)
     function (yhat, y)
         res = 0.
         for i in 1:length(y)
-        if abs(yhat[i] - y[i]) > δ
-            res += δ * abs(yhat[i] - y[i]) - δ*δ
-        else
-            res += (yhat[i] - y[i])*(yhat[i] - y[i])
+            if abs(yhat[i] - y[i]) > δ
+                res += δ * abs(yhat[i] - y[i]) - δ*δ
+            else
+                res += (yhat[i] - y[i])*(yhat[i] - y[i])
+            end
         end
         res/length(y)
     end
