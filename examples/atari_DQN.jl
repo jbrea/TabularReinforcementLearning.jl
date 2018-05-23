@@ -1,5 +1,5 @@
 using TabularReinforcementLearning, Flux
-const withgpu = false
+const withgpu = true
 if withgpu 
     using CuArrays
     const inputdtype = Float32
@@ -15,7 +15,8 @@ model = Chain(x -> x./inputdtype(255), Conv((8, 8), 4 => 32, relu, stride = (4, 
                          x -> reshape(x, :, size(x, 4)),
                          Dense(3456, 512, relu), 
                          Dense(512, na));
-learner = DQN(model, opttype = x -> Flux.ADAM(x, .0001), loss = huberloss(),
+learner = DQN(model, opttype = x -> Flux.ADAM(x, .0001), 
+              loss = huberloss(inputdtype(1)),
               updatetargetevery = 10^4, replaysize = 10^6, nmarkov = 4,
               startlearningat = 50000);
 x = RLSetup(learner, 

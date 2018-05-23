@@ -63,8 +63,14 @@ end
 
 function huberloss(δ = 1)
     function (yhat, y)
-        [abs(yhati - yi) > δ ? δ * abs(yhati - yi) - .5δ^2 : .5(yhati - yi)^2
-         for (yhati, yi) in zip(yhat, y)]
+        res = 0.
+        for i in 1:length(y)
+        if abs(yhat[i] - y[i]) > δ
+            res += δ * abs(yhat[i] - y[i]) - δ*δ
+        else
+            res += (yhat[i] - y[i])*(yhat[i] - y[i])
+        end
+        res/length(y)
     end
 end
 export huberloss
