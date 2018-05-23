@@ -30,6 +30,7 @@
     doubledqn::Bool = true
     nmarkov::Int64 = 1
     replaysize::Int64 = 10^4
+    loss::Function = Flux.mse
 end
 export DQN
 DQN(net; kargs...) = DQN(; net = Flux.gpu(net), kargs...)
@@ -60,6 +61,14 @@ end
 @inline setepsilon(policy::NMarkovPolicy, val) = policy.policy.ϵ = val
 @inline incrementepsilon(policy::NMarkovPolicy, val) = policy.policy.ϵ += val
 
+function huberloss(δ = 1)
+    function (yhat, y)
+        [abs(yhati - yi) > δ ? δ * abs(yhati - yi) - .5δ^2 : .5(yhati - yi)^2
+         for (yhati, yi) in zip(yhat, y)]
+    end
+end
+export huberloss
+
 @inline function selectaction(learner::Union{DQN, DeepActorCritic}, policy, state)
     if learner.nmarkov == 1
         selectaction(policy, learner.policynet(state))
@@ -83,8 +92,8 @@ function update!(learner::DQN, b)
     end
     (learner.t < learner.startlearningat || 
      learner.t % learner.updateevery != 0) && return
-    indices = StatsBase.sample(learner.nmarkov:length(b.rewards), 
-                               learner.minibatchsize, replace = false)
+    indices = StatsBase.sample(1:length(b.rewards), learner.minibatchsize, 
+                               replace = false)
     qa = learner.net(nmarkovgetindex(b.states, indices, learner.nmarkov))
     qat = learner.targetnet(nmarkovgetindex(b.states, indices + 1, learner.nmarkov))
     q = selecta(qa, b.actions[indices])
@@ -100,6 +109,6 @@ function update!(learner::DQN, b)
         end
         push!(rs, r)
     end
-    Flux.back!(0.5 * Flux.mse(q, Flux.gpu(rs)))
+    Flux.back!(learner.loss(q, Flux.gpu(rs)))
     learner.opt()
 end

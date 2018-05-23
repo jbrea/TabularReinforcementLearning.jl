@@ -49,7 +49,7 @@ env = MDP(ns = ns, na = na, init = "deterministic")
 policy = ForcedPolicy(rand(1:na, 200))
 learner = DQN(Linear(ns, na), replaysize = 2, updatetargetevery = 1, 
               updateevery = 1, startlearningat = 1, 
-              opttype = x -> Flux.SGD(x, .1), 
+              opttype = x -> Flux.SGD(x, .1/2), 
               minibatchsize = 1, doubledqn = false)
 x = RLSetup(learner = learner, 
             preprocessor = OneHotPreprocessor(ns),
