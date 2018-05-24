@@ -61,18 +61,16 @@ end
 @inline setepsilon(policy::NMarkovPolicy, val) = policy.policy.ϵ = val
 @inline incrementepsilon(policy::NMarkovPolicy, val) = policy.policy.ϵ += val
 
-function huberloss(δ = 1)
-    function (yhat, y)
-        res = 0.
-        for i in 1:length(y)
-            if abs(yhat[i] - y[i]) > δ
-                res += δ * abs(yhat[i] - y[i]) - δ*δ
-            else
-                res += (yhat[i] - y[i])*(yhat[i] - y[i])
-            end
+function huberloss(yhat, y)
+    res = 0.
+    for i in 1:length(y)
+        if abs(yhat[i] - y[i]) > 1
+            res += abs(yhat[i] - y[i])
+        else
+            res += (yhat[i] - y[i])^2.
         end
-        res/length(y)
     end
+    res/length(y)
 end
 export huberloss
 
