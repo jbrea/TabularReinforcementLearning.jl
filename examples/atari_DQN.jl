@@ -7,7 +7,7 @@ else
     const inputdtype = Float64
 end
 loadenvironment("atari")
-env = AtariEnv("breakout")
+env = AtariEnv("pong")
 na = length(getMinimalActionSet(env.ale))
 model = Chain(x -> x./inputdtype(255), Conv((8, 8), 4 => 32, relu, stride = (4, 4)), 
                          Conv((4, 4), 32 => 64, relu, stride = (2, 2)),
@@ -15,7 +15,7 @@ model = Chain(x -> x./inputdtype(255), Conv((8, 8), 4 => 32, relu, stride = (4, 
                          x -> reshape(x, :, size(x, 4)),
                          Dense(3456, 512, relu), 
                          Dense(512, na));
-learner = DQN(model, opttype = x -> Flux.ADAM(x, .0001), 
+learner = DQN(model, opttype = x -> Flux.ADAM(x, .00005), 
               loss = huberloss,
               updatetargetevery = 10^4, replaysize = 10^6, nmarkov = 4,
               startlearningat = 50000);
