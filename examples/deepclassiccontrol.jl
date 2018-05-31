@@ -7,11 +7,12 @@ ns = 4; na = 2;
 learner = DQN(Chain(Dense(ns, 20, relu), Dense(20, na)),
               updateevery = 1, updatetargetevery = 100,
               startlearningat = 200, minibatchsize = 16,
+              loss = huberloss,
               doubledqn = true, replaysize = 10^3) 
 # learner = DeepActorCritic(Chain(Dense(ns, 20, relu)),
 #                           na = na, nh = 20, αcritic = 0.,
 #                           nsteps = 25)
-learner = ActorCriticPolicyGradient(na = na, ns = ns, αcritic = 0.1, nsteps = 25)
+# learner = ActorCriticPolicyGradient(na = na, ns = ns, αcritic = 0.1, nsteps = 25)
 struct FP end
 import TabularReinforcementLearning:preprocessstate
 preprocessstate(::FP, s) = Float32.(s)
