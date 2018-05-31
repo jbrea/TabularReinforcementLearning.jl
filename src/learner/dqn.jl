@@ -61,17 +61,7 @@ end
 @inline setepsilon(policy::NMarkovPolicy, val) = policy.policy.ϵ = val
 @inline incrementepsilon(policy::NMarkovPolicy, val) = policy.policy.ϵ += val
 
-function huberloss(yhat, y)
-    res = 0.
-    for i in 1:length(y)
-        if abs(yhat[i] - y[i]) > 1
-            res += abs(yhat[i] - y[i])
-        else
-            res += (yhat[i] - y[i])^2.
-        end
-    end
-    res/length(y)
-end
+huberloss(yhat, y::Flux.TrackedArray) = -2*dot(clamp.(yhat - y.data, -1, 1), y)/length(y)
 export huberloss
 
 @inline function selectaction(learner::Union{DQN, DeepActorCritic}, policy, state)
@@ -114,6 +104,6 @@ function update!(learner::DQN, b)
         end
         push!(rs, r)
     end
-    Flux.back!(learner.loss(q, Flux.gpu(rs)))
+    Flux.back!(learner.loss(Flux.gpu(rs), q))
     learner.opt()
 end
