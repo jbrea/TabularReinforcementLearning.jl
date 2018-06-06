@@ -69,7 +69,7 @@ function getstate(env::AtariEnv)
 end
 function reset!(env::AtariEnv)
     reset_game(env.ale)
-    for _ in 1:rand(0:env.noopmax) act(env.ale, 0) end
+    for _ in 1:rand(0:env.noopmax) act(env.ale, Int32(0)) end
     getstate(env)[1]
 end
 
