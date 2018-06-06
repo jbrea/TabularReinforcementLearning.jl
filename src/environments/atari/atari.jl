@@ -5,10 +5,11 @@ struct AtariEnv
     ale::Ptr{Void}
     screen::Array{UInt8, 1}
     getscreen::Function
+    noopmax::Int64
 end
 function AtariEnv(name; 
                   colorspace = "Grayscale",
-                  frame_skip = 4,
+                  frame_skip = 4, noopmax = 20,
                   color_averaging = true,
                   repeat_action_probability = 0.,
                   romdir = joinpath(@__DIR__, "atariroms"))
@@ -34,7 +35,7 @@ function AtariEnv(name;
         screen = Array{Cuchar}(210*160)
         getscreen = getScreen
     end
-    AtariEnv(ale, screen, getscreen)
+    AtariEnv(ale, screen, getscreen, noopmax)
 end
 
 import ArcadeLearningEnvironment.getScreen
@@ -66,7 +67,11 @@ function getstate(env::AtariEnv)
     env.getscreen(env.ale, env.screen)
     env.screen, game_over(env.ale)
 end
-reset!(env::AtariEnv) = reset_game(env.ale)
+function reset!(env::AtariEnv)
+    reset_game(env.ale)
+    for _ in 1:rand(0:env.noopmax) act(env.ale, 0) end
+    getstate(env)[1]
+end
 
 @with_kw struct AtariPreprocessor
     gpu::Bool = false
